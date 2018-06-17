@@ -1,0 +1,12 @@
+[package]
+name = "ecap-adaptor"
+version = "0.1.0"
+authors = ["Mark Simulacrum <mark.simulacrum@gmail.com>"]
+
+[lib]
+name = "rcap"
+crate-type = ["cdylib"]
+
+[dependencies]
+ecap-sys = { path = "../ecap-sys" }
+libc = "0.2"
