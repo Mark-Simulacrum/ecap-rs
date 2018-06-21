@@ -35,24 +35,37 @@ struct rust_version {
 };
 
 #define DETAILS_SIZE 16
+#define DETAILS_ALIGN 8
+
+struct rust_details__ {
+    char details[DETAILS_SIZE];
+    uint64_t __align[0];
+};
 
 struct rust_area {
     size_t size;
     const char *buf;
-    char details[DETAILS_SIZE];
+    rust_details__ details;
 };
 
 // We'll be memcpying the raw bytes in here to preserve them across the C boundary
 static_assert(sizeof(libecap::Area::Details) <= DETAILS_SIZE);
+static_assert(alignof(libecap::Area::Details) == DETAILS_ALIGN);
+static_assert(alignof(rust_details__) == DETAILS_ALIGN);
 
 #define NAME_SIZE 40
-
-// We'll be memcpying the raw bytes in here to preserve them across the C boundary
-static_assert(sizeof(libecap::Name) <= NAME_SIZE);
+#define NAME_ALIGN 8
 
 struct rust_name {
     char name[NAME_SIZE];
+    uint64_t __align[0];
 };
+
+// We'll be memcpying the raw bytes in here to preserve them across the C boundary
+static_assert(sizeof(libecap::Name) <= NAME_SIZE);
+static_assert(sizeof(rust_name) == NAME_SIZE);
+static_assert(alignof(libecap::Name) == NAME_ALIGN);
+static_assert(alignof(rust_name) == NAME_ALIGN);
 
 rust_name to_rust_name(libecap::Name name) {
     rust_name foo;
@@ -80,12 +93,15 @@ rust_area to_rust_area(libecap::Area area) {
 
 #define SHARED_PTR_MESSAGE_SIZE 16
 
-// We'll be memcpying the raw bytes in here to preserve them across the C boundary
-static_assert(sizeof(libecap::shared_ptr<libecap::Message>) <= SHARED_PTR_MESSAGE_SIZE);
-
 struct rust_shared_ptr_message {
     char value[SHARED_PTR_MESSAGE_SIZE];
+    uint64_t __align[0];
 };
+
+// We'll be memcpying the raw bytes in here to preserve them across the C boundary
+static_assert(sizeof(libecap::shared_ptr<libecap::Message>) <= SHARED_PTR_MESSAGE_SIZE);
+static_assert(alignof(libecap::shared_ptr<libecap::Message>) == alignof(rust_shared_ptr_message));
+static_assert(alignof(libecap::shared_ptr<libecap::Message>) == 8);
 
 rust_shared_ptr_message to_rust_shared_ptr_message(libecap::shared_ptr<libecap::Message> msg) {
     rust_shared_ptr_message foo;

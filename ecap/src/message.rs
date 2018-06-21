@@ -117,6 +117,7 @@ extern "C" {
 }
 
 #[repr(C)]
+#[repr(align(8))]
 pub struct SharedPtrMessage([u8; 16]);
 
 impl ops::Deref for SharedPtrMessage {

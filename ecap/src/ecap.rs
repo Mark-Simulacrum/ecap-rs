@@ -27,7 +27,18 @@ extern "C" {
 }
 
 #[repr(C)]
+#[repr(align(8))]
 pub struct Name([u8; 40]);
+
+macro_rules! const_assert {
+    ($condition:expr) => {
+        #[deny(const_err)]
+        #[allow(dead_code)]
+        const ASSERT: usize = 0 - !$condition as usize;
+    }
+}
+
+const_assert!(mem::align_of::<Name>() == 8);
 
 // C++ type in actuality
 impl !Sync for Name {}
@@ -213,6 +224,7 @@ pub struct RustArea {
     // Scratch space for the shared_ptr in C++; we assert that 16
     // bytes is sufficient in C++.
     details: [u8; 16],
+    __align: [u64; 0],
 }
 
 impl RustArea {
