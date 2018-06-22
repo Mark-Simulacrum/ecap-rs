@@ -1,4 +1,4 @@
-use libc::size_t;
+use ffi;
 
 pub enum ImportanceLevel {
     Debug = 0,
@@ -17,15 +17,19 @@ pub enum MessageSizeLevel {
     Large = 1 << 8,
 }
 
-#[repr(C)]
-pub struct RustLogVerbosity(size_t);
+pub struct LogVerbosity(ffi::LogVerbosity);
 
-impl RustLogVerbosity {
-    pub fn new() -> RustLogVerbosity {
-        RustLogVerbosity(
+impl LogVerbosity {
+    pub fn new() -> LogVerbosity {
+        LogVerbosity(ffi::LogVerbosity(
             ImportanceLevel::Critical as usize |
             (FrequencyLevel::Operation as usize) << 8 |
             (MessageSizeLevel::Normal as usize) << 16
-        )
+        ))
+    }
+
+    #[inline]
+    pub fn raw(self) -> ffi::LogVerbosity {
+        self.0
     }
 }

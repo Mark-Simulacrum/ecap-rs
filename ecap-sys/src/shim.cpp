@@ -22,6 +22,11 @@ struct RustLogVerbosity {
     size_t mask;
 };
 
+struct pstr {
+    size_t size;
+    const char *buf;
+};
+
 struct rust_string {
     size_t size;
     const char *buf;
@@ -511,12 +516,11 @@ extern "C" bool rust_name_eq(rust_name *ra, rust_name *rb) {
     return a == b;
 }
 
-extern "C" rust_string rust_name_image(rust_name *a) {
+extern "C" pstr rust_name_image(rust_name *a) {
     const auto &image = from_rust_name(a)->image();
-    return rust_string {
+    return pstr {
         size: image.size(),
         buf: image.data(),
-        capacity: 0,
     };
 }
 

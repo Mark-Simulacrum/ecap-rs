@@ -5,14 +5,13 @@ pub mod shim {
     use std::borrow::Cow;
     use libc::{size_t, c_char, c_void};
 
-    use ecap;
+    use ecap::Area;
     use message::{SharedPtrMessage, Message};
     use super::Transaction;
-    use ecap::RustArea;
 
-    extern {
-        pub type HostTransaction;
-    }
+    use ffi;
+
+    foreign_ref!(pub struct HostTransaction(ffi::HostTransaction));
 
     #[derive(Debug)]
     // FIXME: This struct isn't quite right -- C++ permits having no fields, just state, or both
@@ -21,141 +20,105 @@ pub mod shim {
         progress: f64,
     }
 
-    extern "C" {
-        fn rust_shim_host_xaction_virgin(xaction: *mut HostTransaction) -> *mut Message;
-        fn rust_shim_host_xaction_cause(xaction: *mut HostTransaction) -> *const Message;
-        fn rust_shim_host_xaction_adapted(xaction: *mut HostTransaction) -> *mut Message;
-        fn rust_shim_host_xaction_use_virgin(xaction: *mut HostTransaction);
-        fn rust_shim_host_xaction_use_adapted(xaction: *mut HostTransaction, msg: *const SharedPtrMessage);
-        fn rust_shim_host_xaction_block_virgin(xaction: *mut HostTransaction);
-        fn rust_shim_host_xaction_adaptation_delayed(xaction: *mut HostTransaction, delay_state: *const c_char, delay_state_len: size_t, progress: f64);
-        fn rust_shim_host_xaction_adaptation_aborted(xaction: *mut HostTransaction);
-        fn rust_shim_host_xaction_resume(xaction: *mut HostTransaction);
-        fn rust_shim_host_xaction_vb_discard(xaction: *mut HostTransaction);
-        fn rust_shim_host_xaction_vb_make(xaction: *mut HostTransaction);
-        fn rust_shim_host_xaction_vb_stop_making(xaction: *mut HostTransaction);
-        fn rust_shim_host_xaction_vb_make_more(xaction: *mut HostTransaction);
-        fn rust_shim_host_xaction_vb_pause(xaction: *mut HostTransaction);
-        fn rust_shim_host_xaction_vb_resume(xaction: *mut HostTransaction);
-        fn rust_shim_host_xaction_note_ab_content_available(xaction: *mut HostTransaction);
-        fn rust_shim_host_xaction_note_ab_content_done(xaction: *mut HostTransaction, end: bool);
-        fn rust_shim_host_xaction_vb_content(xaction: *mut HostTransaction, offset: size_t, size: size_t) -> RustArea;
-        fn rust_shim_host_xaction_vb_content_shift(xaction: *mut HostTransaction, size: size_t);
-    }
-
     impl HostTransaction {
-        pub fn virgin(&mut self) -> &mut Message {
-            unsafe {
-                &mut *rust_shim_host_xaction_virgin(self)
-            }
-        }
-
-        pub fn cause(&mut self) -> &Message {
-            unsafe {
-                &*rust_shim_host_xaction_cause(self)
-            }
-        }
-
-        pub fn adapted(&mut self) -> &mut Message {
-            unsafe {
-                &mut *rust_shim_host_xaction_adapted(self)
-            }
-        }
+        accessor!(fn virgin() -> &mut Message: ffi::rust_shim_host_xaction_virgin);
+        accessor!(fn cause(&mut self) -> &Message: ffi::rust_shim_host_xaction_cause);
+        accessor!(fn adapted() -> &mut Message: ffi::rust_shim_host_xaction_adapted);
 
         pub fn use_virgin(&mut self) {
             unsafe {
-                rust_shim_host_xaction_use_virgin(self);
+                ffi::rust_shim_host_xaction_use_virgin(self.as_ptr_mut());
             }
         }
 
         pub fn use_adapted(&mut self, msg: &SharedPtrMessage) {
             unsafe {
-                rust_shim_host_xaction_use_adapted(self, msg);
+                ffi::rust_shim_host_xaction_use_adapted(self.as_ptr_mut(), msg.as_ptr());
             }
         }
 
         pub fn block_virgin(&mut self) {
             unsafe {
-                rust_shim_host_xaction_block_virgin(self);
+                ffi::rust_shim_host_xaction_block_virgin(self.as_ptr_mut());
             }
         }
 
         pub fn adaptation_delayed(&mut self, delay: &Delay) {
             unsafe {
-                rust_shim_host_xaction_adaptation_delayed(
-                    self, delay.state.as_ptr() as *const c_char, delay.state.len(), delay.progress);
+                ffi::rust_shim_host_xaction_adaptation_delayed(
+                    self.as_ptr_mut(), delay.state.as_ptr() as *const c_char, delay.state.len(), delay.progress);
             }
         }
 
         pub fn adaptation_aborted(&mut self) {
             unsafe {
-                rust_shim_host_xaction_adaptation_aborted(self);
+                ffi::rust_shim_host_xaction_adaptation_aborted(self.as_ptr_mut());
             }
         }
 
         pub fn resume(&mut self) {
             unsafe {
-                rust_shim_host_xaction_resume(self);
+                ffi::rust_shim_host_xaction_resume(self.as_ptr_mut());
             }
         }
 
         pub fn virgin_body_discard(&mut self) {
             unsafe {
-                rust_shim_host_xaction_vb_discard(self);
+                ffi::rust_shim_host_xaction_vb_discard(self.as_ptr_mut());
             }
         }
 
         pub fn virgin_body_make(&mut self) {
             unsafe {
-                rust_shim_host_xaction_vb_make(self);
+                ffi::rust_shim_host_xaction_vb_make(self.as_ptr_mut());
             }
         }
 
         pub fn virgin_body_stop_making(&mut self) {
             unsafe {
-                rust_shim_host_xaction_vb_stop_making(self);
+                ffi::rust_shim_host_xaction_vb_stop_making(self.as_ptr_mut());
             }
         }
 
         pub fn virgin_body_make_more(&mut self) {
             unsafe {
-                rust_shim_host_xaction_vb_make_more(self);
+                ffi::rust_shim_host_xaction_vb_make_more(self.as_ptr_mut());
             }
         }
 
         pub fn virgin_body_pause(&mut self) {
             unsafe {
-                rust_shim_host_xaction_vb_pause(self);
+                ffi::rust_shim_host_xaction_vb_pause(self.as_ptr_mut());
             }
         }
 
         pub fn virgin_body_resume(&mut self) {
             unsafe {
-                rust_shim_host_xaction_vb_resume(self);
+                ffi::rust_shim_host_xaction_vb_resume(self.as_ptr_mut());
             }
         }
 
-        pub fn virgin_body_content(&mut self, offset: usize, size: usize) -> RustArea {
+        pub fn virgin_body_content(&mut self, offset: usize, size: usize) -> Area {
             unsafe {
-                rust_shim_host_xaction_vb_content(self, offset, size)
+                Area::from_raw(ffi::rust_shim_host_xaction_vb_content(self.as_ptr_mut(), offset, size))
             }
         }
 
         pub fn virgin_body_content_shift(&mut self, size: usize) {
             unsafe {
-                rust_shim_host_xaction_vb_content_shift(self, size)
+                ffi::rust_shim_host_xaction_vb_content_shift(self.as_ptr_mut(), size)
             }
         }
 
         pub fn note_adapted_body_content_done(&mut self, at_end: bool) {
             unsafe {
-                rust_shim_host_xaction_note_ab_content_done(self, at_end);
+                ffi::rust_shim_host_xaction_note_ab_content_done(self.as_ptr_mut(), at_end);
             }
         }
 
         pub fn note_adapted_body_content_available(&mut self) {
             unsafe {
-                rust_shim_host_xaction_note_ab_content_available(self);
+                ffi::rust_shim_host_xaction_note_ab_content_available(self.as_ptr_mut());
             }
         }
     }
@@ -202,8 +165,8 @@ pub mod shim {
         mut data: TransactionPtr,
         offset: size_t,
         size: size_t,
-    ) -> ecap::RustArea {
-        to_transaction_mut(&mut data).adapted_body_content(offset, size)
+    ) -> ffi::Area {
+        to_transaction_mut(&mut data).adapted_body_content(offset, size).raw()
     }
 
     #[no_mangle]
@@ -254,7 +217,7 @@ pub trait Transaction {
     fn adapted_body_pause(&mut self);
     fn adapted_body_resume(&mut self);
 
-    fn adapted_body_content(&mut self, offset: usize, size: usize) -> ecap::RustArea;
+    fn adapted_body_content(&mut self, offset: usize, size: usize) -> ecap::Area;
     fn adapted_body_content_shift(&mut self, size: usize);
 
     fn virgin_body_content_done(&mut self, at_end: bool);
@@ -343,7 +306,7 @@ impl<'a> Transaction for Minimal<'a> {
     fn adapted_body_pause(&mut self) {}
     fn adapted_body_resume(&mut self) {}
 
-    fn adapted_body_content(&mut self, offset: usize, size: usize) -> ecap::RustArea {
+    fn adapted_body_content(&mut self, offset: usize, size: usize) -> ecap::Area {
         assert_eq!(self.sending, State::On);
         host!(self).virgin_body_content(offset, size)
     }

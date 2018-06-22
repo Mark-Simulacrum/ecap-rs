@@ -1,11 +1,24 @@
 use std::mem;
-use std::fmt::Write;
+use std::fmt::{self, Write};
 use std::cell::RefCell;
 use libc::{c_char, c_void};
-use ecap::{self, Ostream, CString};
+use ecap;
 use Service;
 use Minimal;
 use std::ffi::CStr;
+use ffi;
+
+foreign_ref!(pub struct Ostream(ffi::Ostream));
+
+impl fmt::Write for Ostream {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        unsafe {
+            ffi::rust_shim_ostream_write(
+                self.as_ptr_mut(), s.as_ptr() as *const c_char, s.len());
+        }
+        Ok(())
+    }
+}
 
 type ServicePtr = *mut *mut c_void;
 
@@ -39,15 +52,15 @@ pub unsafe extern "C" fn rust_service_describe(service: ServicePtr, stream: *mut
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn rust_service_uri(service: ServicePtr) -> CString {
+pub unsafe extern "C" fn rust_service_uri(service: ServicePtr) -> ffi::CVec {
     let s = to_service(&service);
-    CString::from(s.uri())
+    ffi::CVec::from(s.uri())
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn rust_service_tag(service: ServicePtr) -> CString {
+pub unsafe extern "C" fn rust_service_tag(service: ServicePtr) -> ffi::CVec {
     let s = to_service(&service);
-    CString::from(s.tag())
+    ffi::CVec::from(s.tag())
 }
 
 #[no_mangle]
