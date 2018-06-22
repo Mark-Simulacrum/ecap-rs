@@ -1,4 +1,4 @@
-#![feature(optin_builtin_traits, extern_types)]
+#![feature(crate_visibility_modifier, optin_builtin_traits, extern_types)]
 
 extern crate libc;
 extern crate ecap_sys as ffi;
@@ -79,6 +79,8 @@ pub trait Service {
     fn retire(&self);
 
     fn wants_url(&self, url: &CStr) -> bool;
+
+    fn make_transaction(&mut self, host: *mut xaction::HostTransaction) -> Box<dyn xaction::Transaction>;
 }
 
 #[derive(Debug)]
@@ -88,6 +90,14 @@ struct Minimal {
 }
 
 impl Service for Minimal {
+    fn make_transaction(&mut self, host: *mut xaction::HostTransaction) -> Box<dyn xaction::Transaction> {
+        Box::new(xaction::Minimal {
+            host: unsafe { Some(&mut *host) },
+            sending: xaction::State::Undecided,
+            receiving: xaction::State::Undecided,
+        })
+    }
+
     fn uri(&self) -> String {
         format!("ecap://e-cap.org/ecap/services/sample/minimal")
     }

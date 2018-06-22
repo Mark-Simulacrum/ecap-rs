@@ -8,6 +8,7 @@ pub mod shim {
     use ecap::Area;
     use message::{SharedPtrMessage, Message};
     use super::Transaction;
+    use shim::{to_service_mut, ServicePtr};
 
     use ffi;
 
@@ -183,15 +184,9 @@ pub mod shim {
     }
 
     #[no_mangle]
-    pub unsafe extern fn rust_xaction_create(host: *mut HostTransaction) -> TransactionPtr {
-        // FIXME: This needs to somehow be given the ctor for the service we want to create
-        let transaction = super::Minimal {
-            host: Some(&mut *host),
-            sending: super::State::Undecided,
-            receiving: super::State::Undecided,
-        };
-
-        let transaction: Box<dyn Transaction> = Box::new(transaction);
+    pub unsafe extern fn rust_xaction_create(mut service: ServicePtr, host: *mut HostTransaction) -> TransactionPtr {
+        let service = to_service_mut(&mut service);
+        let transaction = service.make_transaction(host);
         let ptr = Box::into_raw(transaction);
         let transaction_ptr: Box<*mut dyn Transaction> = Box::new(ptr);
         Box::into_raw(transaction_ptr) as *mut *mut c_void
@@ -225,17 +220,17 @@ pub trait Transaction {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-enum State {
+pub enum State {
     Undecided,
     On,
     Complete,
     Never,
 }
 
-struct Minimal<'a> {
-    host: Option<&'a mut HostTransaction>,
-    receiving: State,
-    sending: State,
+pub struct Minimal<'a> {
+    pub host: Option<&'a mut HostTransaction>,
+    pub receiving: State,
+    pub sending: State,
 }
 
 pub use xaction::shim::HostTransaction;

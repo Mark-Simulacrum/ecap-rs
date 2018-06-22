@@ -159,7 +159,7 @@ extern "C" {
 
     const void **rust_service_create();
     void rust_service_free(const void **);
-    const void *rust_xaction_create(void *);
+    const void *rust_xaction_create(const void **, void *);
     void rust_xaction_free(const void *);
 }
 
@@ -242,7 +242,7 @@ class Service: public libecap::adapter::Service {
 
 		Service();
 		~Service();
-	private:
+	public:
 	    // Rust service, unknown; managed on Rust's end
 	    const void **rust_service;
 };
@@ -252,7 +252,7 @@ class Service: public libecap::adapter::Service {
 // a minimal adapter transaction
 class Xaction: public libecap::adapter::Xaction {
 	public:
-		Xaction(libecap::host::Xaction *x);
+		Xaction(Service *service, libecap::host::Xaction *x);
 		virtual ~Xaction();
 
 		// meta-info for the host transaction
@@ -366,12 +366,12 @@ bool Adapter::Service::wantsUrl(const char *url) const {
 
 Adapter::Service::MadeXactionPointer
 Adapter::Service::makeXaction(libecap::host::Xaction *hostx) {
-	return Adapter::Service::MadeXactionPointer(new Adapter::Xaction(hostx));
+	return Adapter::Service::MadeXactionPointer(new Adapter::Xaction(this, hostx));
 }
 
 
-Adapter::Xaction::Xaction(libecap::host::Xaction *x) {
-    rust_xaction = rust_xaction_create(x);
+Adapter::Xaction::Xaction(Adapter::Service *service, libecap::host::Xaction *x) {
+    rust_xaction = rust_xaction_create(service->rust_service, x);
 }
 
 Adapter::Xaction::~Xaction() {

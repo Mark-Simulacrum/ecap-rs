@@ -20,13 +20,20 @@ impl fmt::Write for Ostream {
     }
 }
 
-type ServicePtr = *mut *mut c_void;
+crate type ServicePtr = *mut *mut c_void;
 
-unsafe fn to_service<'a>(service: &'a ServicePtr) -> &'a dyn Service {
+crate unsafe fn to_service<'a>(service: &'a ServicePtr) -> &'a dyn Service {
     assert!(!service.is_null());
     let service: *mut *mut dyn Service = mem::transmute(*service);
     let service = *(service as *mut *mut Service);
     &*service
+}
+
+crate unsafe fn to_service_mut<'a>(service: &'a mut ServicePtr) -> &'a mut dyn Service {
+    assert!(!service.is_null());
+    let service: *mut *mut dyn Service = mem::transmute(*service);
+    let service = *(service as *mut *mut Service);
+    &mut *service
 }
 
 #[no_mangle]
