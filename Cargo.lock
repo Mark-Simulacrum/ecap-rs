@@ -4,7 +4,7 @@ version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "ecap-adaptor"
+name = "ecap"
 version = "0.1.0"
 dependencies = [
  "ecap-sys 0.1.0",

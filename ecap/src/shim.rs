@@ -1,10 +1,8 @@
 use std::mem;
 use std::fmt::{self, Write};
-use std::cell::RefCell;
 use libc::{c_char, c_void};
 use ecap;
 use Service;
-use Minimal;
 use std::ffi::CStr;
 use ffi;
 
@@ -86,20 +84,6 @@ pub unsafe extern "C" fn rust_service_reconfigure(service: ServicePtr, options: 
 pub unsafe extern "C" fn rust_service_wants_url(service: ServicePtr, url: *const c_char) -> bool {
     assert!(!url.is_null());
     to_service(&service).wants_url(CStr::from_ptr(url))
-}
-
-#[no_mangle]
-pub unsafe extern fn rust_service_create() -> ServicePtr {
-    // FIXME: This needs to somehow be given the ctor for the service we want to create
-    let service = Minimal {
-        victim: RefCell::new(None),
-        replacement: RefCell::new(None),
-    };
-
-    let service: Box<dyn Service> = Box::new(service);
-    let ptr = Box::into_raw(service);
-    let service_ptr: Box<*mut dyn Service> = Box::new(ptr);
-    Box::into_raw(service_ptr) as *mut *mut c_void
 }
 
 #[no_mangle]
