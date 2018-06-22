@@ -197,6 +197,8 @@ extern "C" {
     pub fn rust_shim_host_open_debug(verbosity: LogVerbosity) -> *mut Ostream;
     pub fn rust_shim_host_close_debug(stream: *mut Ostream);
     pub fn rust_shim_ostream_write(stream: *mut Ostream, buf: *const c_char, len: size_t);
+
+    pub fn rust_shim_register_service(service: *mut *mut c_void) -> bool;
 }
 
 pub extern "C" fn visitor_callback(

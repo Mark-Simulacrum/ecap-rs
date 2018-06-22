@@ -3,6 +3,8 @@
 extern crate libc;
 extern crate ecap_sys as ffi;
 
+use libc::c_void;
+
 macro_rules! accessor {
     (fn $name:ident() -> &mut $rty:path: $cfunc:path) => {
         pub fn $name(&mut self) -> &mut $rty {
@@ -87,6 +89,24 @@ pub trait Service {
 struct Minimal {
     victim: RefCell<Option<ecap::Area>>,
     replacement: RefCell<Option<ecap::Area>>,
+}
+
+pub fn register_service<T: Service>(service: T) {
+    unsafe {
+        let service: Box<dyn Service> = Box::new(service);
+        let ptr = Box::into_raw(service);
+        let service_ptr: Box<*mut dyn Service> = Box::new(ptr);
+        let ptr = Box::into_raw(service_ptr) as *mut *mut c_void;
+        ffi::rust_shim_register_service(ptr);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn rust_register_services() {
+    register_service(Minimal {
+        victim: RefCell::new(None),
+        replacement: RefCell::new(None),
+    });
 }
 
 impl Service for Minimal {

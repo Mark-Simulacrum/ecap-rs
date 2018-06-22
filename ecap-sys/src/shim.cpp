@@ -157,10 +157,11 @@ extern "C" {
     void rust_xaction_vb_content_done(const void *, bool);
     void rust_xaction_vb_content_available(const void *);
 
-    const void **rust_service_create();
     void rust_service_free(const void **);
     const void *rust_xaction_create(const void **, void *);
     void rust_xaction_free(const void *);
+
+    void rust_register_services();
 }
 
 rust_string to_rust_string(const std::string &s) {
@@ -240,7 +241,7 @@ class Service: public libecap::adapter::Service {
 		// Work
 		virtual MadeXactionPointer makeXaction(libecap::host::Xaction *hostx);
 
-		Service();
+		Service(const void **rust_service);
 		~Service();
 	public:
 	    // Rust service, unknown; managed on Rust's end
@@ -481,8 +482,8 @@ extern "C" void rust_shim_host_xaction_vb_content_shift(libecap::host::Xaction *
     xaction->vbContentShift(size);
 }
 
-Adapter::Service::Service() {
-    rust_service = rust_service_create();
+Adapter::Service::Service(const void **serv) {
+    rust_service = serv;
 }
 
 Adapter::Service::~Service() {
@@ -650,6 +651,14 @@ extern "C" void rust_shim_header_visit_each(
     header->visitEach(visitor);
 }
 
+extern "C" bool rust_shim_register_service(const void **service) {
+    return libecap::RegisterVersionedService(new Adapter::Service(service));
+}
+
+bool register_services() {
+    rust_register_services();
+    return true;
+}
+
 // create the adapter and register with libecap to reach the host application
-static const bool Registered =
-	libecap::RegisterVersionedService(new Adapter::Service());
+static const bool RegisteredFromRust = register_services();
