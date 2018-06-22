@@ -35,7 +35,7 @@ impl Service for Minimal {
     }
 
     fn uri(&self) -> String {
-        format!("ecap://e-cap.org/ecap/services/sample/minimal")
+        format!("ecap://e-cap.org/ecap/services/sample/passthru")
     }
 
     fn configure(&self, options: &Options) {

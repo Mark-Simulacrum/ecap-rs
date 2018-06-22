@@ -11,3 +11,7 @@ libc = "0.2"
 [[example]]
 name = "passthru"
 crate-type = ["cdylib"]
+
+[[example]]
+name = "minimal"
+crate-type = ["cdylib"]
