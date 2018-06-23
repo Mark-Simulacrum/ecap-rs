@@ -6,7 +6,7 @@ pub mod shim {
     use Area;
     use message::{SharedPtrMessage, Message};
     use super::Transaction;
-    use shim::{to_service_mut, ServicePtr};
+    use service_shim::{to_service_mut, ServicePtr};
 
     use ffi;
 

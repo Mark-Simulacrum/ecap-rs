@@ -72,7 +72,7 @@ pub mod log;
 mod misc;
 pub use misc::*;
 
-pub mod shim;
+pub mod service_shim;
 pub mod xaction;
 pub mod message;
 
@@ -109,3 +109,8 @@ pub fn register_service<T: Service>(service: T) {
         ffi::rust_shim_register_service(ptr);
     }
 }
+
+// Dummy registrar function so that we successfully link with the shim
+#[cfg(test)]
+#[no_mangle]
+pub extern "C" fn rust_register_services() {}

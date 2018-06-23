@@ -216,3 +216,7 @@ pub extern "C" fn visitor_callback(
         f(&*name, value);
     }
 }
+
+#[cfg(test)]
+#[no_mangle]
+pub extern "C" fn rust_register_services() {}
