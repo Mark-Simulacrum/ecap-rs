@@ -38,17 +38,17 @@ impl Name {
 
     pub fn image<'a>(&'a self) -> &'a [u8] {
         unsafe {
-            let ffi::PStr { size, buf } = ffi::rust_name_image(&self.0);
+            let ffi::PStr { size, buf } = ffi::rust_name_image(self.as_ptr());
             slice::from_raw_parts(buf as *const u8, size)
         }
     }
 
     pub fn known(&self) -> bool {
-        unsafe { ffi::rust_name_known(&self.0) }
+        unsafe { ffi::rust_name_known(self.as_ptr()) }
     }
 
     pub fn identified(&self) -> bool {
-        unsafe { ffi::rust_name_identified(&self.0) }
+        unsafe { ffi::rust_name_identified(self.as_ptr()) }
     }
 }
 
