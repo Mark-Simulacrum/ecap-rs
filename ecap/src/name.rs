@@ -1,6 +1,6 @@
-use std::{fmt, slice};
 use ffi;
-use libc::{c_int, c_char};
+use libc::{c_char, c_int};
+use std::{fmt, slice};
 
 pub struct Name(ffi::Name);
 
@@ -14,20 +14,25 @@ impl Name {
     }
 
     pub fn unknown() -> Name {
-        unsafe {
-            Name(ffi::rust_name_new_unknown())
-        }
+        unsafe { Name(ffi::rust_name_new_unknown()) }
     }
 
     pub fn with_image(image: &[u8]) -> Name {
         unsafe {
-            Name(ffi::rust_name_new_image(image.as_ptr() as *const c_char, image.len()))
+            Name(ffi::rust_name_new_image(
+                image.as_ptr() as *const c_char,
+                image.len(),
+            ))
         }
     }
 
     pub fn with_image_and_identified(image: &[u8], id: c_int) -> Name {
         unsafe {
-            Name(ffi::rust_name_new_image_id(image.as_ptr() as *const c_char, image.len(), id))
+            Name(ffi::rust_name_new_image_id(
+                image.as_ptr() as *const c_char,
+                image.len(),
+                id,
+            ))
         }
     }
 
@@ -39,15 +44,11 @@ impl Name {
     }
 
     pub fn known(&self) -> bool {
-        unsafe {
-            ffi::rust_name_known(&self.0)
-        }
+        unsafe { ffi::rust_name_known(&self.0) }
     }
 
     pub fn identified(&self) -> bool {
-        unsafe {
-            ffi::rust_name_identified(&self.0)
-        }
+        unsafe { ffi::rust_name_identified(&self.0) }
     }
 }
 
@@ -68,9 +69,7 @@ fn name_eq_1() {
 
 impl PartialEq for Name {
     fn eq(&self, other: &Self) -> bool {
-        unsafe {
-            ffi::rust_name_eq(self.as_ptr(), other.as_ptr())
-        }
+        unsafe { ffi::rust_name_eq(self.as_ptr(), other.as_ptr()) }
     }
 }
 

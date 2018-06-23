@@ -1,12 +1,12 @@
 pub mod shim {
-    use std::mem;
+    use libc::{c_char, c_void, size_t};
     use std::borrow::Cow;
-    use libc::{size_t, c_char, c_void};
+    use std::mem;
 
-    use Area;
-    use message::{SharedPtrMessage, Message};
     use super::Transaction;
+    use message::{Message, SharedPtrMessage};
     use service_shim::{to_service_mut, ServicePtr};
+    use Area;
 
     use ffi;
 
@@ -45,7 +45,11 @@ pub mod shim {
         pub fn adaptation_delayed(&mut self, delay: &Delay) {
             unsafe {
                 ffi::rust_shim_host_xaction_adaptation_delayed(
-                    self.as_ptr_mut(), delay.state.as_ptr() as *const c_char, delay.state.len(), delay.progress);
+                    self.as_ptr_mut(),
+                    delay.state.as_ptr() as *const c_char,
+                    delay.state.len(),
+                    delay.progress,
+                );
             }
         }
 
@@ -99,14 +103,16 @@ pub mod shim {
 
         pub fn virgin_body_content(&mut self, offset: usize, size: usize) -> Area {
             unsafe {
-                Area::from_raw(ffi::rust_shim_host_xaction_vb_content(self.as_ptr_mut(), offset, size))
+                Area::from_raw(ffi::rust_shim_host_xaction_vb_content(
+                    self.as_ptr_mut(),
+                    offset,
+                    size,
+                ))
             }
         }
 
         pub fn virgin_body_content_shift(&mut self, size: usize) {
-            unsafe {
-                ffi::rust_shim_host_xaction_vb_content_shift(self.as_ptr_mut(), size)
-            }
+            unsafe { ffi::rust_shim_host_xaction_vb_content_shift(self.as_ptr_mut(), size) }
         }
 
         pub fn note_adapted_body_content_done(&mut self, at_end: bool) {
@@ -132,7 +138,9 @@ pub mod shim {
         &*transaction
     }
 
-    unsafe fn to_transaction_mut<'a>(transaction: &'a mut TransactionPtr) -> &'a mut dyn Transaction {
+    unsafe fn to_transaction_mut<'a>(
+        transaction: &'a mut TransactionPtr,
+    ) -> &'a mut dyn Transaction {
         assert!(!transaction.is_null());
         let transaction: *mut *mut dyn Transaction = mem::transmute(*transaction);
         let transaction = *(transaction as *mut *mut dyn Transaction);
@@ -145,7 +153,7 @@ pub mod shim {
             pub unsafe extern "C" fn $c(mut data: TransactionPtr) {
                 to_transaction_mut(&mut data).$method();
             }
-        }
+        };
     }
 
     transaction_mut_method!(rust_xaction_start, start);
@@ -157,7 +165,10 @@ pub mod shim {
     transaction_mut_method!(rust_xaction_ab_stop_making, adapted_body_stop_making);
     transaction_mut_method!(rust_xaction_ab_pause, adapted_body_pause);
     transaction_mut_method!(rust_xaction_ab_resume, adapted_body_resume);
-    transaction_mut_method!(rust_xaction_vb_content_available, virgin_body_content_available);
+    transaction_mut_method!(
+        rust_xaction_vb_content_available,
+        virgin_body_content_available
+    );
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_xaction_ab_content(
@@ -165,14 +176,13 @@ pub mod shim {
         offset: size_t,
         size: size_t,
     ) -> ffi::Area {
-        to_transaction_mut(&mut data).adapted_body_content(offset, size).raw()
+        to_transaction_mut(&mut data)
+            .adapted_body_content(offset, size)
+            .raw()
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn rust_xaction_ab_content_shift(
-        mut data: TransactionPtr,
-        size: size_t,
-    ) {
+    pub unsafe extern "C" fn rust_xaction_ab_content_shift(mut data: TransactionPtr, size: size_t) {
         to_transaction_mut(&mut data).adapted_body_content_shift(size);
     }
 
@@ -182,7 +192,10 @@ pub mod shim {
     }
 
     #[no_mangle]
-    pub unsafe extern fn rust_xaction_create(mut service: ServicePtr, host: *mut HostTransaction) -> TransactionPtr {
+    pub unsafe extern "C" fn rust_xaction_create(
+        mut service: ServicePtr,
+        host: *mut HostTransaction,
+    ) -> TransactionPtr {
         let service = to_service_mut(&mut service);
         let transaction = service.make_transaction(host);
         let ptr = Box::into_raw(transaction.0);
@@ -191,9 +204,10 @@ pub mod shim {
     }
 
     #[no_mangle]
-    pub unsafe extern fn rust_xaction_free(transaction: TransactionPtr) {
+    pub unsafe extern "C" fn rust_xaction_free(transaction: TransactionPtr) {
         assert!(!transaction.is_null());
-        let ptr: Box<*mut dyn Transaction> = Box::from_raw(transaction as *mut *mut dyn Transaction);
+        let ptr: Box<*mut dyn Transaction> =
+            Box::from_raw(transaction as *mut *mut dyn Transaction);
         let tr: Box<dyn Transaction> = Box::from_raw(*ptr);
         mem::drop(tr);
     }

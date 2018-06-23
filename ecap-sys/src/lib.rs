@@ -2,9 +2,9 @@
 
 extern crate libc;
 
-use std::{slice, ptr, mem};
+use std::{mem, ptr, slice};
 
-use libc::{c_char, size_t, c_void, c_int};
+use libc::{c_char, c_int, c_void, size_t};
 
 #[repr(C)]
 #[derive(Debug)]
@@ -14,7 +14,7 @@ pub struct Version {
     pub micro: c_int,
 }
 
-extern {
+extern "C" {
     pub type FirstLine;
     pub type RequestLine;
     pub type StatusLine;
@@ -72,13 +72,7 @@ pub struct CVec {
 
 impl CVec {
     pub fn to_rust(self) -> Vec<u8> {
-        let ret = unsafe {
-            Vec::from_raw_parts(
-                self.buf as *mut u8,
-                self.size,
-                self.capacity
-            )
-        };
+        let ret = unsafe { Vec::from_raw_parts(self.buf as *mut u8, self.size, self.capacity) };
         mem::forget(self);
         ret
     }
@@ -149,7 +143,11 @@ extern "C" {
     pub fn rust_shim_header_remove_any(header: *mut Header, name: *const Name);
     pub fn rust_shim_header_image(header: *const Header) -> Area;
     pub fn rust_shim_header_parse(header: *mut Header, buf: *const Area);
-    pub fn rust_shim_header_visit_each(header: *const Header, cb: VisitorCallback, extra: *const c_void);
+    pub fn rust_shim_header_visit_each(
+        header: *const Header,
+        cb: VisitorCallback,
+        extra: *const c_void,
+    );
 
     pub fn rust_name_new_unknown() -> Name;
     pub fn rust_name_new_image(buf: *const c_char, len: size_t) -> Name;
@@ -164,9 +162,17 @@ extern "C" {
     pub fn rust_shim_host_xaction_cause(xaction: *mut HostTransaction) -> *const Message;
     pub fn rust_shim_host_xaction_adapted(xaction: *mut HostTransaction) -> *mut Message;
     pub fn rust_shim_host_xaction_use_virgin(xaction: *mut HostTransaction);
-    pub fn rust_shim_host_xaction_use_adapted(xaction: *mut HostTransaction, msg: *const SharedPtrMessage);
+    pub fn rust_shim_host_xaction_use_adapted(
+        xaction: *mut HostTransaction,
+        msg: *const SharedPtrMessage,
+    );
     pub fn rust_shim_host_xaction_block_virgin(xaction: *mut HostTransaction);
-    pub fn rust_shim_host_xaction_adaptation_delayed(xaction: *mut HostTransaction, delay_state: *const c_char, delay_state_len: size_t, progress: f64);
+    pub fn rust_shim_host_xaction_adaptation_delayed(
+        xaction: *mut HostTransaction,
+        delay_state: *const c_char,
+        delay_state_len: size_t,
+        progress: f64,
+    );
     pub fn rust_shim_host_xaction_adaptation_aborted(xaction: *mut HostTransaction);
     pub fn rust_shim_host_xaction_resume(xaction: *mut HostTransaction);
     pub fn rust_shim_host_xaction_vb_discard(xaction: *mut HostTransaction);
@@ -177,7 +183,11 @@ extern "C" {
     pub fn rust_shim_host_xaction_vb_resume(xaction: *mut HostTransaction);
     pub fn rust_shim_host_xaction_note_ab_content_available(xaction: *mut HostTransaction);
     pub fn rust_shim_host_xaction_note_ab_content_done(xaction: *mut HostTransaction, end: bool);
-    pub fn rust_shim_host_xaction_vb_content(xaction: *mut HostTransaction, offset: size_t, size: size_t) -> Area;
+    pub fn rust_shim_host_xaction_vb_content(
+        xaction: *mut HostTransaction,
+        offset: size_t,
+        size: size_t,
+    ) -> Area;
     pub fn rust_shim_host_xaction_vb_content_shift(xaction: *mut HostTransaction, size: size_t);
 
     pub fn rust_area_new() -> Area;

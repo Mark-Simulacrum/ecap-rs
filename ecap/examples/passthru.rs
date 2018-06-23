@@ -1,13 +1,13 @@
 extern crate ecap;
 
-use std::mem;
-use std::fmt::Write;
 use std::cell::RefCell;
 use std::ffi::CStr;
+use std::fmt::Write;
+use std::mem;
 
-use ecap::xaction::Transaction;
-use ecap::{Area, AllocatedTransaction, Service, Options};
 use ecap::xaction::shim::HostTransaction;
+use ecap::xaction::Transaction;
+use ecap::{AllocatedTransaction, Area, Options, Service};
 
 #[derive(Debug)]
 struct Minimal {
@@ -70,7 +70,10 @@ impl Service for Minimal {
     }
 
     fn describe(&self) -> String {
-        println!("host uri: {:?}", String::from_utf8_lossy(&ecap::Host::uri()));
+        println!(
+            "host uri: {:?}",
+            String::from_utf8_lossy(&ecap::Host::uri())
+        );
 
         let mut debug = ecap::log::DebugStream::new();
         write!(debug, "happiness1").unwrap();
@@ -79,8 +82,12 @@ impl Service for Minimal {
         write!(debug, "happiness3").unwrap();
         mem::drop(debug);
 
-        format!("A minimal adapter from {} v{}: {:?}",
-            env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"), self)
+        format!(
+            "A minimal adapter from {} v{}: {:?}",
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION"),
+            self
+        )
     }
 
     fn wants_url(&self, url: &CStr) -> bool {
@@ -106,13 +113,16 @@ pub struct MinimalXaction<'a> {
 macro_rules! host {
     ($s:expr) => {
         $s.host.as_mut().unwrap()
-    }
+    };
 }
 
 impl<'a> Transaction for MinimalXaction<'a> {
     fn start(&mut self) {
         println!("starting xaction");
-        println!("version = {:?}", host!(self).virgin().first_line().version());
+        println!(
+            "version = {:?}",
+            host!(self).virgin().first_line().version()
+        );
         println!("body = {}", host!(self).virgin().body().is_some());
         if host!(self).virgin().body().is_some() {
             self.receiving = State::On;
@@ -120,7 +130,10 @@ impl<'a> Transaction for MinimalXaction<'a> {
             host!(self).virgin().header().visit_each(|name, value| {
                 println!("header: {:?}: {:?}", name, value);
             });
-            println!("body size = {:?}", host!(self).virgin().body().unwrap().size());
+            println!(
+                "body size = {:?}",
+                host!(self).virgin().body().unwrap().size()
+            );
         } else {
             self.receiving = State::Never;
         }
@@ -141,7 +154,7 @@ impl<'a> Transaction for MinimalXaction<'a> {
         println!("stopping xaction");
     }
 
-    fn resume(&mut self) { }
+    fn resume(&mut self) {}
 
     fn adapted_body_discard(&mut self) {
         assert_eq!(self.sending, State::Undecided);

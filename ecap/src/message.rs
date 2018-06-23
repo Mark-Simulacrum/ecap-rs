@@ -1,9 +1,9 @@
 #![allow(unused)]
-use libc::{size_t, c_char, c_void, c_int};
-use std::ops;
 use ffi;
+use libc::{c_char, c_int, c_void, size_t};
+use std::ops;
 
-use {Name, Area};
+use {Area, Name};
 
 #[derive(Debug, Copy, Clone, Eq)]
 pub struct Version {
@@ -15,9 +15,21 @@ pub struct Version {
 impl Version {
     pub fn from_raw(v: ffi::Version) -> Self {
         Version {
-            major: if v.major >= 0 { Some(v.major as u32) } else { None },
-            minor: if v.minor >= 0 { Some(v.minor as u32) } else { None },
-            micro: if v.micro >= 0 { Some(v.micro as u32) } else { None },
+            major: if v.major >= 0 {
+                Some(v.major as u32)
+            } else {
+                None
+            },
+            minor: if v.minor >= 0 {
+                Some(v.minor as u32)
+            } else {
+                None
+            },
+            micro: if v.micro >= 0 {
+                Some(v.micro as u32)
+            } else {
+                None
+            },
         }
     }
 
@@ -36,10 +48,10 @@ impl Version {
 
 impl PartialEq for Version {
     fn eq(&self, other: &Self) -> bool {
-        self.known() &&
-        self.major == other.major &&
-        self.minor == other.minor &&
-        self.micro == other.micro
+        self.known()
+            && self.major == other.major
+            && self.minor == other.minor
+            && self.micro == other.micro
     }
 }
 
@@ -47,15 +59,11 @@ foreign_ref!(pub struct FirstLine(ffi::FirstLine));
 
 impl FirstLine {
     pub fn version(&self) -> Version {
-        unsafe {
-            Version::from_raw(ffi::rust_shim_version(self.as_ptr()))
-        }
+        unsafe { Version::from_raw(ffi::rust_shim_version(self.as_ptr())) }
     }
 
     pub fn set_version(&mut self, version: Version) {
-        unsafe {
-            ffi::rust_shim_set_version(self.as_ptr_mut(), &version.raw())
-        }
+        unsafe { ffi::rust_shim_set_version(self.as_ptr_mut(), &version.raw()) }
     }
 
     pub fn protocol(&self) -> Name {
@@ -121,16 +129,16 @@ impl SharedPtrMessage {
 impl ops::Deref for SharedPtrMessage {
     type Target = Message;
     fn deref(&self) -> &Message {
-        unsafe {
-            Message::from_ptr(ffi::rust_shim_shared_ptr_message_ref(&self.0 as *const _))
-        }
+        unsafe { Message::from_ptr(ffi::rust_shim_shared_ptr_message_ref(&self.0 as *const _)) }
     }
 }
 
 impl ops::DerefMut for SharedPtrMessage {
     fn deref_mut(&mut self) -> &mut Message {
         unsafe {
-            Message::from_ptr_mut(ffi::rust_shim_shared_ptr_message_ref_mut(&mut self.0 as *mut _))
+            Message::from_ptr_mut(ffi::rust_shim_shared_ptr_message_ref_mut(
+                &mut self.0 as *mut _,
+            ))
         }
     }
 }
@@ -147,9 +155,7 @@ foreign_ref!(pub struct Message(ffi::Message));
 
 impl Message {
     pub fn clone(&self) -> SharedPtrMessage {
-        unsafe {
-            SharedPtrMessage(ffi::rust_shim_message_clone(self.as_ptr()))
-        }
+        unsafe { SharedPtrMessage(ffi::rust_shim_message_clone(self.as_ptr())) }
     }
 
     accessor!(fn first_line() -> &FirstLine: ffi::rust_shim_message_first_line);
@@ -197,45 +203,36 @@ foreign_ref!(pub struct Header(ffi::Header));
 
 impl Header {
     pub fn has_any(&self, name: &Name) -> bool {
-        unsafe {
-            ffi::rust_shim_header_has_any(self.as_ptr(), name.as_ptr())
-        }
+        unsafe { ffi::rust_shim_header_has_any(self.as_ptr(), name.as_ptr()) }
     }
 
     pub fn value(&self, name: &Name) -> Area {
-        unsafe {
-            Area::from_raw(ffi::rust_shim_header_value(self.as_ptr(), name.as_ptr()))
-        }
+        unsafe { Area::from_raw(ffi::rust_shim_header_value(self.as_ptr(), name.as_ptr())) }
     }
 
     pub fn add(&mut self, name: &Name, value: &Area) {
-        unsafe {
-            ffi::rust_shim_header_add(self.as_ptr_mut(), name.as_ptr(), value.as_ptr())
-        }
+        unsafe { ffi::rust_shim_header_add(self.as_ptr_mut(), name.as_ptr(), value.as_ptr()) }
     }
 
     pub fn remove_any(&mut self, name: &Name) {
-        unsafe {
-            ffi::rust_shim_header_remove_any(self.as_ptr_mut(), name.as_ptr())
-        }
+        unsafe { ffi::rust_shim_header_remove_any(self.as_ptr_mut(), name.as_ptr()) }
     }
 
     pub fn image(&self) -> Area {
-        unsafe {
-            Area::from_raw(ffi::rust_shim_header_image(self.as_ptr()))
-        }
+        unsafe { Area::from_raw(ffi::rust_shim_header_image(self.as_ptr())) }
     }
 
     pub fn parse(&mut self, buf: &Area) {
-        unsafe {
-            ffi::rust_shim_header_parse(self.as_ptr_mut(), buf.as_ptr())
-        }
+        unsafe { ffi::rust_shim_header_parse(self.as_ptr_mut(), buf.as_ptr()) }
     }
 
     pub fn visit_each(&self, callback: fn(&Name, &[u8])) {
         unsafe {
             ffi::rust_shim_header_visit_each(
-                self.as_ptr(), ffi::visitor_callback, callback as *const c_void);
+                self.as_ptr(),
+                ffi::visitor_callback,
+                callback as *const c_void,
+            );
         }
     }
 }

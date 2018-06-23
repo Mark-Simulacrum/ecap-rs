@@ -1,5 +1,5 @@
 use libc::c_char;
-use std::{ptr, mem, slice, fmt};
+use std::{fmt, mem, ptr, slice};
 
 use ffi;
 
@@ -7,15 +7,11 @@ pub struct Area(ffi::Area);
 
 impl Area {
     pub fn new() -> Area {
-        unsafe {
-            Area(ffi::rust_area_new())
-        }
+        unsafe { Area(ffi::rust_area_new()) }
     }
 
     pub fn as_bytes(&self) -> &[u8] {
-        unsafe {
-            slice::from_raw_parts(self.0.buf as *mut u8, self.0.size)
-        }
+        unsafe { slice::from_raw_parts(self.0.buf as *mut u8, self.0.size) }
     }
 
     pub fn as_ptr(&self) -> *const ffi::Area {
@@ -54,7 +50,10 @@ impl<T: AsRef<[u8]>> From<T> for Area {
         let data = v.as_ref();
         unsafe {
             // FIXME: Avoid the copy here
-            Area(ffi::rust_area_new_slice(data.as_ptr() as *const c_char, data.len()))
+            Area(ffi::rust_area_new_slice(
+                data.as_ptr() as *const c_char,
+                data.len(),
+            ))
         }
     }
 }

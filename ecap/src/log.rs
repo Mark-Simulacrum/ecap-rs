@@ -1,7 +1,7 @@
-use std::ptr::NonNull;
-use std::fmt;
-use libc::c_char;
 use ffi;
+use libc::c_char;
+use std::fmt;
+use std::ptr::NonNull;
 
 pub enum ImportanceLevel {
     Debug = 0,
@@ -25,9 +25,9 @@ pub struct LogVerbosity(ffi::LogVerbosity);
 impl LogVerbosity {
     pub fn new() -> LogVerbosity {
         LogVerbosity(ffi::LogVerbosity(
-            ImportanceLevel::Critical as usize |
-            (FrequencyLevel::Operation as usize) << 8 |
-            (MessageSizeLevel::Normal as usize) << 16
+            ImportanceLevel::Critical as usize
+                | (FrequencyLevel::Operation as usize) << 8
+                | (MessageSizeLevel::Normal as usize) << 16,
         ))
     }
 
@@ -78,8 +78,7 @@ foreign_ref!(pub struct Ostream(ffi::Ostream));
 impl fmt::Write for Ostream {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         unsafe {
-            ffi::rust_shim_ostream_write(
-                self.as_ptr_mut(), s.as_ptr() as *const c_char, s.len());
+            ffi::rust_shim_ostream_write(self.as_ptr_mut(), s.as_ptr() as *const c_char, s.len());
         }
         Ok(())
     }

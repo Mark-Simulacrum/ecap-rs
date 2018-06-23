@@ -2,9 +2,9 @@ extern crate ecap;
 
 use std::ffi::CStr;
 
-use ecap::xaction::Transaction;
 use ecap::xaction::shim::HostTransaction;
-use ecap::{Service, Options, AllocatedTransaction};
+use ecap::xaction::Transaction;
+use ecap::{AllocatedTransaction, Options, Service};
 
 #[derive(Debug)]
 struct Minimal(u32);
@@ -51,8 +51,12 @@ impl Service for Minimal {
     }
 
     fn describe(&self) -> String {
-        format!("A minimal adapter from {} v{}: {:?}",
-            env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"), self)
+        format!(
+            "A minimal adapter from {} v{}: {:?}",
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION"),
+            self
+        )
     }
 
     fn wants_url(&self, _url: &CStr) -> bool {
@@ -67,7 +71,7 @@ pub struct MinimalXaction<'a> {
 macro_rules! host {
     ($s:expr) => {
         $s.host.as_mut().unwrap()
-    }
+    };
 }
 
 impl<'a> Transaction for MinimalXaction<'a> {
@@ -82,19 +86,19 @@ impl<'a> Transaction for MinimalXaction<'a> {
         println!("stopping xaction");
     }
 
-    fn resume(&mut self) { }
-    fn adapted_body_discard(&mut self) { }
-    fn adapted_body_make(&mut self) { }
-    fn adapted_body_make_more(&mut self) { }
-    fn adapted_body_stop_making(&mut self) { }
+    fn resume(&mut self) {}
+    fn adapted_body_discard(&mut self) {}
+    fn adapted_body_make(&mut self) {}
+    fn adapted_body_make_more(&mut self) {}
+    fn adapted_body_stop_making(&mut self) {}
     fn adapted_body_pause(&mut self) {}
     fn adapted_body_resume(&mut self) {}
     fn adapted_body_content(&mut self, _offset: usize, _size: usize) -> ecap::Area {
         ecap::Area::new()
     }
-    fn adapted_body_content_shift(&mut self, _offset: usize) { }
-    fn virgin_body_content_done(&mut self, _at_end: bool) { }
-    fn virgin_body_content_available(&mut self) { }
+    fn adapted_body_content_shift(&mut self, _offset: usize) {}
+    fn virgin_body_content_done(&mut self, _at_end: bool) {}
+    fn virgin_body_content_available(&mut self) {}
 }
 
 impl<'a> Drop for MinimalXaction<'a> {

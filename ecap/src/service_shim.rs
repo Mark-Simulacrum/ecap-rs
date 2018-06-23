@@ -1,10 +1,10 @@
-use std::mem;
-use std::fmt::Write;
-use libc::{c_char, c_void};
-use {Options, Service};
-use std::ffi::CStr;
-use log::Ostream;
 use ffi;
+use libc::{c_char, c_void};
+use log::Ostream;
+use std::ffi::CStr;
+use std::fmt::Write;
+use std::mem;
+use {Options, Service};
 
 crate type ServicePtr = *mut *mut c_void;
 
@@ -75,7 +75,7 @@ pub unsafe extern "C" fn rust_service_wants_url(service: ServicePtr, url: *const
 }
 
 #[no_mangle]
-pub unsafe extern fn rust_service_free(service: ServicePtr) {
+pub unsafe extern "C" fn rust_service_free(service: ServicePtr) {
     assert!(!service.is_null());
     let service: Box<dyn Service> = Box::from_raw(*(service as *mut *mut Service));
     mem::drop(service);

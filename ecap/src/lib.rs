@@ -1,7 +1,7 @@
 #![feature(crate_visibility_modifier, optin_builtin_traits, extern_types)]
 
-extern crate libc;
 extern crate ecap_sys as ffi;
+extern crate libc;
 
 use libc::c_void;
 
@@ -56,7 +56,7 @@ macro_rules! foreign_ref {
                 self as *mut _ as *mut $cname
             }
         }
-    }
+    };
 }
 
 use std::ffi::CStr;
@@ -72,9 +72,9 @@ pub mod log;
 mod misc;
 pub use misc::*;
 
+pub mod message;
 pub mod service_shim;
 pub mod xaction;
-pub mod message;
 
 // XXX: Naming
 pub struct AllocatedTransaction(Box<dyn xaction::Transaction>);
@@ -99,7 +99,10 @@ pub trait Service {
 
     fn wants_url(&self, url: &CStr) -> bool;
 
-    fn make_transaction(&mut self, host: *mut xaction::shim::HostTransaction) -> AllocatedTransaction;
+    fn make_transaction(
+        &mut self,
+        host: *mut xaction::shim::HostTransaction,
+    ) -> AllocatedTransaction;
 }
 
 pub fn register_service<T: Service>(service: T) {
