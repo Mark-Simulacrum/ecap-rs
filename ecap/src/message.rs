@@ -3,7 +3,8 @@ use libc::{size_t, c_char, c_void, c_int};
 use std::ops;
 use ffi;
 
-use ecap::{Area, PascalStr, Name};
+use PascalStr;
+use {Name, Area};
 
 #[derive(Debug, Copy, Clone, Eq)]
 pub struct Version {

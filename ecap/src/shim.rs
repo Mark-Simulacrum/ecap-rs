@@ -1,22 +1,10 @@
 use std::mem;
-use std::fmt::{self, Write};
+use std::fmt::Write;
 use libc::{c_char, c_void};
-use ecap;
-use Service;
+use {Options, Service};
 use std::ffi::CStr;
+use log::Ostream;
 use ffi;
-
-foreign_ref!(pub struct Ostream(ffi::Ostream));
-
-impl fmt::Write for Ostream {
-    fn write_str(&mut self, s: &str) -> fmt::Result {
-        unsafe {
-            ffi::rust_shim_ostream_write(
-                self.as_ptr_mut(), s.as_ptr() as *const c_char, s.len());
-        }
-        Ok(())
-    }
-}
 
 crate type ServicePtr = *mut *mut c_void;
 
@@ -50,10 +38,10 @@ pub unsafe extern "C" fn rust_service_retire(service: ServicePtr) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn rust_service_describe(service: ServicePtr, stream: *mut Ostream) {
+pub unsafe extern "C" fn rust_service_describe(service: ServicePtr, stream: *mut ffi::Ostream) {
     let s = to_service(&service);
     let desc = s.describe();
-    write!(&mut *stream, "{}", desc).unwrap();
+    write!(Ostream::from_ptr_mut(stream), "{}", desc).unwrap();
 }
 
 #[no_mangle]
@@ -69,13 +57,13 @@ pub unsafe extern "C" fn rust_service_tag(service: ServicePtr) -> ffi::CVec {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn rust_service_configure(service: ServicePtr, options: *const ecap::Options) {
+pub unsafe extern "C" fn rust_service_configure(service: ServicePtr, options: *const Options) {
     assert!(!options.is_null());
     to_service(&service).configure(&*options)
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn rust_service_reconfigure(service: ServicePtr, options: *const ecap::Options) {
+pub unsafe extern "C" fn rust_service_reconfigure(service: ServicePtr, options: *const Options) {
     assert!(!options.is_null());
     to_service(&service).reconfigure(&*options)
 }

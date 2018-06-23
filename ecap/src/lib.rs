@@ -61,26 +61,43 @@ macro_rules! foreign_ref {
 
 use std::ffi::CStr;
 
+mod area;
+pub use area::Area;
+mod name;
+pub use name::Name;
+mod options;
+pub use options::Options;
 pub mod log;
-pub mod ecap;
-pub use ecap::*;
+
+mod misc;
+pub use misc::*;
+
 pub mod shim;
 pub mod xaction;
 pub mod message;
+
+// XXX: Naming
+pub struct AllocatedTransaction(Box<dyn xaction::Transaction>);
+
+impl AllocatedTransaction {
+    pub fn new<T: xaction::Transaction + 'static>(transaction: T) -> Self {
+        AllocatedTransaction(Box::new(transaction))
+    }
+}
 
 pub trait Service {
     fn uri(&self) -> String;
     fn tag(&self) -> String;
     fn describe(&self) -> String;
-    fn configure(&self, options: &ecap::Options);
-    fn reconfigure(&self, options: &ecap::Options);
+    fn configure(&self, options: &Options);
+    fn reconfigure(&self, options: &Options);
     fn start(&self);
     fn stop(&self);
     fn retire(&self);
 
     fn wants_url(&self, url: &CStr) -> bool;
 
-    fn make_transaction(&mut self, host: *mut xaction::shim::HostTransaction) -> Box<dyn xaction::Transaction>;
+    fn make_transaction(&mut self, host: *mut xaction::shim::HostTransaction) -> AllocatedTransaction;
 }
 
 pub fn register_service<T: Service>(service: T) {

@@ -2,11 +2,9 @@ extern crate ecap;
 
 use std::ffi::CStr;
 
-use ecap::Service;
 use ecap::xaction::Transaction;
-use ecap::ecap::{Options};
-use ecap::xaction;
 use ecap::xaction::shim::HostTransaction;
+use ecap::{Service, Options, AllocatedTransaction};
 
 #[derive(Debug)]
 struct Minimal(u32);
@@ -18,8 +16,8 @@ pub extern "C" fn rust_register_services() {
 }
 
 impl Service for Minimal {
-    fn make_transaction(&mut self, host: *mut HostTransaction) -> Box<dyn xaction::Transaction> {
-        Box::new(MinimalXaction {
+    fn make_transaction(&mut self, host: *mut HostTransaction) -> AllocatedTransaction {
+        AllocatedTransaction::new(MinimalXaction {
             host: unsafe { Some(&mut *host) },
         })
     }

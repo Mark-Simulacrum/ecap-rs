@@ -5,10 +5,8 @@ use std::fmt::Write;
 use std::cell::RefCell;
 use std::ffi::CStr;
 
-use ecap::Service;
 use ecap::xaction::Transaction;
-use ecap::ecap::{Area, Options};
-use ecap::xaction;
+use ecap::{Area, AllocatedTransaction, Service, Options};
 use ecap::xaction::shim::HostTransaction;
 
 #[derive(Debug)]
@@ -26,8 +24,8 @@ pub extern "C" fn rust_register_services() {
 }
 
 impl Service for Minimal {
-    fn make_transaction(&mut self, host: *mut HostTransaction) -> Box<dyn xaction::Transaction> {
-        Box::new(MinimalXaction {
+    fn make_transaction(&mut self, host: *mut HostTransaction) -> AllocatedTransaction {
+        AllocatedTransaction::new(MinimalXaction {
             host: unsafe { Some(&mut *host) },
             sending: State::Undecided,
             receiving: State::Undecided,
@@ -74,10 +72,10 @@ impl Service for Minimal {
     fn describe(&self) -> String {
         println!("host uri: {:?}", String::from_utf8_lossy(&ecap::Host::uri()));
 
-        let mut debug = ecap::DebugStream::new();
+        let mut debug = ecap::log::DebugStream::new();
         write!(debug, "happiness1").unwrap();
         mem::drop(debug);
-        let mut debug = ecap::DebugStream::new();
+        let mut debug = ecap::log::DebugStream::new();
         write!(debug, "happiness3").unwrap();
         mem::drop(debug);
 

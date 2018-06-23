@@ -1,11 +1,9 @@
-use ecap;
-
 pub mod shim {
     use std::mem;
     use std::borrow::Cow;
     use libc::{size_t, c_char, c_void};
 
-    use ecap::Area;
+    use Area;
     use message::{SharedPtrMessage, Message};
     use super::Transaction;
     use shim::{to_service_mut, ServicePtr};
@@ -187,7 +185,7 @@ pub mod shim {
     pub unsafe extern fn rust_xaction_create(mut service: ServicePtr, host: *mut HostTransaction) -> TransactionPtr {
         let service = to_service_mut(&mut service);
         let transaction = service.make_transaction(host);
-        let ptr = Box::into_raw(transaction);
+        let ptr = Box::into_raw(transaction.0);
         let transaction_ptr: Box<*mut dyn Transaction> = Box::new(ptr);
         Box::into_raw(transaction_ptr) as *mut *mut c_void
     }
@@ -201,6 +199,8 @@ pub mod shim {
     }
 }
 
+use area::Area;
+
 pub trait Transaction {
     fn start(&mut self);
     fn stop(&mut self);
@@ -212,7 +212,7 @@ pub trait Transaction {
     fn adapted_body_pause(&mut self);
     fn adapted_body_resume(&mut self);
 
-    fn adapted_body_content(&mut self, offset: usize, size: usize) -> ecap::Area;
+    fn adapted_body_content(&mut self, offset: usize, size: usize) -> Area;
     fn adapted_body_content_shift(&mut self, size: usize);
 
     fn virgin_body_content_done(&mut self, at_end: bool);
