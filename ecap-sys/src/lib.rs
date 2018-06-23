@@ -99,28 +99,23 @@ impl<T: Into<Vec<u8>>> From<T> for CVec {
 
 impl Drop for CVec {
     fn drop(&mut self) {
-        // FIXME: use pascalstr for capacity = 0
-        if self.capacity > 0 {
-            let dummy = Vec::new().into();
-            let me = mem::replace(self, dummy);
-            mem::drop(me.to_rust());
+        unsafe {
+            let _ = Vec::from_raw_parts(self.buf as *mut u8, self.size, self.capacity);
         }
     }
 }
 
 #[no_mangle]
-pub extern "C" fn rust_new_string(buf: *const c_char, len: size_t) -> CVec {
-    unsafe {
-        let mut data = Vec::with_capacity(len);
-        ptr::copy_nonoverlapping(buf as *const u8, data.as_mut_ptr(), len);
-        let v = CVec {
-            size: data.len(),
-            buf: data.as_ptr() as *mut c_char,
-            capacity: data.capacity(),
-        };
-        mem::forget(data);
-        v
-    }
+pub unsafe extern "C" fn rust_new_string(buf: *const c_char, len: size_t) -> CVec {
+    let mut data = Vec::with_capacity(len);
+    ptr::copy_nonoverlapping(buf as *const u8, data.as_mut_ptr(), len);
+    let v = CVec {
+        size: data.len(),
+        buf: data.as_ptr() as *mut c_char,
+        capacity: data.capacity(),
+    };
+    mem::forget(data);
+    v
 }
 
 #[no_mangle]

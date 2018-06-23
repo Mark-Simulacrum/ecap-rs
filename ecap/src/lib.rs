@@ -85,11 +85,13 @@ impl AllocatedTransaction {
     }
 }
 
+// XXX: The destructor of Service implementors doesn't run today.
 pub trait Service {
     fn uri(&self) -> String;
     fn tag(&self) -> String;
     fn describe(&self) -> String;
     fn configure(&self, options: &Options);
+    // Not actually called today: probably a bug in Squid.
     fn reconfigure(&self, options: &Options);
     fn start(&self);
     fn stop(&self);

@@ -235,7 +235,7 @@ class Service: public libecap::adapter::Service {
 		virtual void stop(); // no more makeXaction() calls until start()
 		virtual void retire(); // no more makeXaction() calls
 
-		// Scope (XXX: this may be changed to look at the whole header)
+		// Scope
 		virtual bool wantsUrl(const char *url) const;
 
 		// Work
@@ -247,8 +247,6 @@ class Service: public libecap::adapter::Service {
 	    // Rust service, unknown; managed on Rust's end
 	    const void **rust_service;
 };
-
-// TODO: libecap should provide an adapter::HeaderOnlyXact convenience class
 
 // a minimal adapter transaction
 class Xaction: public libecap::adapter::Xaction {
@@ -342,7 +340,6 @@ void Adapter::Service::configure(const libecap::Options &options) {
 }
 
 void Adapter::Service::reconfigure(const libecap::Options &options) {
-    // FIXME: This does not actually get called with -k reconfigure: bug?
     rust_service_reconfigure(rust_service, &options);
 }
 
@@ -487,7 +484,6 @@ Adapter::Service::Service(const void **serv) {
 }
 
 Adapter::Service::~Service() {
-    // XXX: This appears to not run and is as such untested
     rust_service_free(rust_service);
 }
 
