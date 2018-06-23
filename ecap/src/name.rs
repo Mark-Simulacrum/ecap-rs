@@ -1,7 +1,6 @@
 use std::{fmt, slice};
 use ffi;
 use libc::{c_int, c_char};
-use PascalStr;
 
 pub struct Name(ffi::Name);
 
@@ -32,11 +31,10 @@ impl Name {
         }
     }
 
-    pub fn image<'a>(&'a self) -> &'a PascalStr {
+    pub fn image<'a>(&'a self) -> &'a [u8] {
         unsafe {
             let ffi::PStr { size, buf } = ffi::rust_name_image(&self.0);
-            let bytes = slice::from_raw_parts(buf as *const u8, size);
-            PascalStr::new(bytes)
+            slice::from_raw_parts(buf as *const u8, size)
         }
     }
 
