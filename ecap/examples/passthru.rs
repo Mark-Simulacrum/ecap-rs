@@ -2,8 +2,6 @@ extern crate ecap;
 
 use std::cell::RefCell;
 use std::ffi::CStr;
-use std::fmt::Write;
-use std::mem;
 
 use ecap::xaction::shim::HostTransaction;
 use ecap::xaction::Transaction;
@@ -36,21 +34,12 @@ impl Service for Minimal {
         format!("ecap://e-cap.org/ecap/services/sample/passthru")
     }
 
-    fn configure(&self, options: &Options) {
-        let victim = options.option(b"victim");
-        let replacement = options.option(b"replacement");
-
-        options.visit(|name, value| {
-            println!("n={:p}, v={:?}", name, value);
-        });
-
-        println!("will replace {:?} with {:?}", victim, replacement);
-        *self.victim.borrow_mut() = Some(victim);
-        *self.replacement.borrow_mut() = Some(replacement);
+    fn configure(&self, _options: &Options) {
+        // no options
     }
 
     fn reconfigure(&self, _options: &Options) {
-        println!("reconfiguring");
+        // no options
     }
 
     fn tag(&self) -> String {
@@ -70,18 +59,6 @@ impl Service for Minimal {
     }
 
     fn describe(&self) -> String {
-        println!(
-            "host uri: {:?}",
-            String::from_utf8_lossy(&ecap::Host::uri())
-        );
-
-        let mut debug = ecap::log::DebugStream::new();
-        write!(debug, "happiness1").unwrap();
-        mem::drop(debug);
-        let mut debug = ecap::log::DebugStream::new();
-        write!(debug, "happiness3").unwrap();
-        mem::drop(debug);
-
         format!(
             "A minimal adapter from {} v{}: {:?}",
             env!("CARGO_PKG_NAME"),
@@ -90,8 +67,7 @@ impl Service for Minimal {
         )
     }
 
-    fn wants_url(&self, url: &CStr) -> bool {
-        println!("url: {:?}", url);
+    fn wants_url(&self, _url: &CStr) -> bool {
         true
     }
 }
@@ -118,22 +94,9 @@ macro_rules! host {
 
 impl<'a> Transaction for MinimalXaction<'a> {
     fn start(&mut self) {
-        println!("starting xaction");
-        println!(
-            "version = {:?}",
-            host!(self).virgin().first_line().version()
-        );
-        println!("body = {}", host!(self).virgin().body().is_some());
         if host!(self).virgin().body().is_some() {
             self.receiving = State::On;
             host!(self).virgin_body_make();
-            host!(self).virgin().header().visit_each(|name, value| {
-                println!("header: {:?}: {:?}", name, value);
-            });
-            println!(
-                "body size = {:?}",
-                host!(self).virgin().body().unwrap().size()
-            );
         } else {
             self.receiving = State::Never;
         }
@@ -142,7 +105,6 @@ impl<'a> Transaction for MinimalXaction<'a> {
         if adapted.body().is_none() {
             self.sending = State::Never; // nothing to send
             host!(self).use_adapted(&adapted);
-            println!("set host to none");
             self.host = None;
         } else {
             host!(self).use_adapted(&adapted);
@@ -151,7 +113,6 @@ impl<'a> Transaction for MinimalXaction<'a> {
 
     fn stop(&mut self) {
         let _ = self.host.take();
-        println!("stopping xaction");
     }
 
     fn resume(&mut self) {}
@@ -212,6 +173,5 @@ impl<'a> Drop for MinimalXaction<'a> {
         if let Some(host) = self.host.take() {
             host.adaptation_aborted();
         }
-        println!("dropping minimal xaction!");
     }
 }
