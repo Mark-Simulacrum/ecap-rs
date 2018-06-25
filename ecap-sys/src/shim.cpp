@@ -178,12 +178,11 @@ extern "C" void *rust_shim_host_open_debug(RustLogVerbosity verbosity) {
     return libecap::MyHost().openDebug(libecap::LogVerbosity(verbosity.mask));
 }
 
-extern "C" void rust_shim_host_close_debug(void* stream) {
-    libecap::MyHost().closeDebug(reinterpret_cast<std::ostream*>(stream));
+extern "C" void rust_shim_host_close_debug(std::ostream* stream) {
+    libecap::MyHost().closeDebug(stream);
 }
 
-extern "C" void rust_shim_ostream_write(void *sptr, char *buf, size_t length) {
-    auto stream = reinterpret_cast<std::ostream*>(sptr);
+extern "C" void rust_shim_ostream_write(std::ostream *stream, char *buf, size_t length) {
     stream->write(buf, length);
 }
 
