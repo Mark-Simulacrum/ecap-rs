@@ -59,8 +59,6 @@ macro_rules! foreign_ref {
     };
 }
 
-use std::ffi::CStr;
-
 mod area;
 pub use area::Area;
 mod name;
@@ -72,6 +70,7 @@ pub mod log;
 mod misc;
 pub use misc::*;
 
+pub mod adapter;
 pub mod message;
 pub mod service_shim;
 pub mod xaction;
@@ -85,25 +84,7 @@ impl AllocatedTransaction {
     }
 }
 
-// XXX: The destructor of Service implementors doesn't run today.
-pub trait Service {
-    fn uri(&self) -> String;
-    fn tag(&self) -> String;
-    fn describe(&self) -> String;
-    fn configure(&self, options: &Options);
-    // Not actually called today: probably a bug in Squid.
-    fn reconfigure(&self, options: &Options);
-    fn start(&self);
-    fn stop(&self);
-    fn retire(&self);
-
-    fn wants_url(&self, url: &CStr) -> bool;
-
-    fn make_transaction(
-        &mut self,
-        host: *mut xaction::shim::HostTransaction,
-    ) -> AllocatedTransaction;
-}
+use adapter::Service;
 
 pub fn register_service<T: Service>(service: T) {
     unsafe {

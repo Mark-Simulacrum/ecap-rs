@@ -17,6 +17,7 @@
 #include <libecap/common/body_size.h>
 #include <libecap/common/memory.h>
 #include <libecap/common/delay.h>
+#include <sys/time.h>
 
 struct RustLogVerbosity {
     size_t mask;
@@ -138,6 +139,9 @@ extern "C" {
     void rust_service_start(const void **);
     void rust_service_stop(const void **);
     void rust_service_retire(const void **);
+    bool rust_service_is_async(const void **);
+    void rust_service_resume(const void **);
+    void rust_service_suspend(const void **, timeval *);
     void rust_service_configure(const void **, const libecap::Options *);
     void rust_service_reconfigure(const void **, const libecap::Options *);
     bool rust_service_wants_url(const void **, const char *);
@@ -224,6 +228,7 @@ class Service: public libecap::adapter::Service {
 		virtual std::string uri() const; // unique across all vendors
 		virtual std::string tag() const; // changes with version and config
 		virtual void describe(std::ostream &os) const; // free-format info
+		virtual bool makesAsyncXactions() const;
 
 		// Configuration
 		virtual void configure(const libecap::Options &cfg);
@@ -233,6 +238,8 @@ class Service: public libecap::adapter::Service {
 		virtual void start(); // expect makeXaction() calls
 		virtual void stop(); // no more makeXaction() calls until start()
 		virtual void retire(); // no more makeXaction() calls
+		virtual void suspend(timeval &timeout); // influence host waiting time
+		virtual void resume(); // kick async xactions via host::Xaction::resume
 
 		// Scope
 		virtual bool wantsUrl(const char *url) const;
@@ -334,6 +341,10 @@ extern "C" void options_visit(
     options->visitEachOption(visitor);
 }
 
+bool Adapter::Service::makesAsyncXactions() const {
+	return rust_service_is_async(rust_service);
+}
+
 void Adapter::Service::configure(const libecap::Options &options) {
     rust_service_configure(rust_service, &options);
 }
@@ -347,14 +358,22 @@ void Adapter::Service::start() {
 	rust_service_start(rust_service);
 }
 
+void Adapter::Service::suspend(timeval &delay) {
+	rust_service_suspend(rust_service, &delay);
+}
+
 void Adapter::Service::stop() {
 	rust_service_stop(rust_service);
 	libecap::adapter::Service::stop();
 }
 
+void Adapter::Service::resume() {
+	rust_service_resume(rust_service);
+	libecap::adapter::Service::stop();
+}
+
 void Adapter::Service::retire() {
 	rust_service_retire(rust_service);
-	libecap::adapter::Service::retire();
 }
 
 bool Adapter::Service::wantsUrl(const char *url) const {

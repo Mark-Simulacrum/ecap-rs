@@ -1,9 +1,10 @@
 use ffi;
-use libc::{c_char, c_void};
+use libc::{c_char, timeval, c_void};
 use log::Ostream;
 use std::ffi::CStr;
 use std::fmt::Write;
 use std::mem;
+use std::time::Duration;
 use {Options, Service};
 
 crate type ServicePtr = *mut *mut c_void;
@@ -35,6 +36,27 @@ pub unsafe extern "C" fn rust_service_stop(service: ServicePtr) {
 #[no_mangle]
 pub unsafe extern "C" fn rust_service_retire(service: ServicePtr) {
     to_service(&service).retire();
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rust_service_is_async(service: ServicePtr) {
+    to_service(&service).is_async();
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rust_service_resume(service: ServicePtr) {
+    to_service(&service).resume();
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rust_service_suspend(service: ServicePtr, duration: *mut timeval) {
+    assert!(!duration.is_null());
+    let duration = &mut *duration;
+    let mut rduration = Duration::from_secs(duration.tv_sec as u64);
+    rduration += Duration::from_micros(duration.tv_usec as u64);
+    to_service(&service).suspend(&mut rduration);
+    duration.tv_sec = rduration.as_secs() as i64;
+    duration.tv_usec = rduration.subsec_micros() as i64;
 }
 
 #[no_mangle]

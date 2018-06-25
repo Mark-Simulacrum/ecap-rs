@@ -2,10 +2,11 @@ extern crate ecap;
 
 use std::cell::RefCell;
 use std::ffi::CStr;
+use std::time::Duration;
 
 use ecap::xaction::shim::HostTransaction;
 use ecap::xaction::Transaction;
-use ecap::{AllocatedTransaction, Area, Options, Service};
+use ecap::{AllocatedTransaction, Area, Options, adapter::Service};
 
 #[derive(Debug)]
 struct Minimal {
@@ -56,6 +57,14 @@ impl Service for Minimal {
 
     fn retire(&self) {
         println!("retiring minimal service");
+    }
+
+    fn suspend(&self, _duration: &mut Duration) {
+        panic!("should not be called on non-async adapters");
+    }
+
+    fn resume(&self) {
+        panic!("should not be called on non-async adapters");
     }
 
     fn describe(&self) -> String {

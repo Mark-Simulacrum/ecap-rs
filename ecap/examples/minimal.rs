@@ -1,10 +1,11 @@
 extern crate ecap;
 
 use std::ffi::CStr;
+use std::time::Duration;
 
 use ecap::xaction::shim::HostTransaction;
 use ecap::xaction::Transaction;
-use ecap::{AllocatedTransaction, Options, Service};
+use ecap::{AllocatedTransaction, Options, adapter::Service};
 
 #[derive(Debug)]
 struct Minimal(u32);
@@ -44,6 +45,14 @@ impl Service for Minimal {
 
     fn stop(&self) {
         println!("stopping minimal service");
+    }
+
+    fn suspend(&self, _duration: &mut Duration) {
+        panic!("not an async service");
+    }
+
+    fn resume(&self) {
+        panic!("not an async service");
     }
 
     fn retire(&self) {
