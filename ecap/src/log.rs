@@ -3,20 +3,36 @@ use libc::c_char;
 use std::fmt;
 use std::ptr::NonNull;
 
+/// Importance of the logged message to the host application admin
 pub enum ImportanceLevel {
+    /// Debugging information. Not normally logged.
     Debug = 0,
+
+    /// General information. Seen and logged by default.
     Normal = 1,
+
+    /// Information logged and seen in "quiet" mode.
     Critical = 2,
 }
 
+/// Quantity of messages expected under normal conditions
 pub enum FrequencyLevel {
+    /// Many times in transaction lifetime
     Operation = 0,
+
+    /// Once/twice in transaction lifetime
     Xaction = 1 << 4,
+
+    /// Occurs just a few times in application lifetime
     Application = 2 << 4,
 }
 
+/// Message length in normal conditions
 pub enum MessageSizeLevel {
+    /// Regular log line, under ~120 characters
     Normal = 0,
+
+    /// Data dumps mostly
     Large = 1 << 8,
 }
 
