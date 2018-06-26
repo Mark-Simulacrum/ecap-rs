@@ -213,22 +213,4 @@ pub mod shim {
     }
 }
 
-use area::Area;
-
-pub trait Transaction {
-    fn start(&mut self);
-    fn stop(&mut self);
-    fn resume(&mut self);
-    fn adapted_body_discard(&mut self);
-    fn adapted_body_make(&mut self);
-    fn adapted_body_make_more(&mut self);
-    fn adapted_body_stop_making(&mut self);
-    fn adapted_body_pause(&mut self);
-    fn adapted_body_resume(&mut self);
-
-    fn adapted_body_content(&mut self, offset: usize, size: usize) -> Area;
-    fn adapted_body_content_shift(&mut self, size: usize);
-
-    fn virgin_body_content_done(&mut self, at_end: bool);
-    fn virgin_body_content_available(&mut self);
-}
+pub use adapter::Transaction;

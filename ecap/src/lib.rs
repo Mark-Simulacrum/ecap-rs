@@ -70,6 +70,7 @@ pub mod log;
 mod misc;
 pub use misc::*;
 
+pub mod host;
 pub mod adapter;
 pub mod message;
 pub mod service_shim;
