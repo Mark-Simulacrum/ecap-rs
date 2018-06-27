@@ -1,4 +1,4 @@
-#![feature(crate_visibility_modifier, optin_builtin_traits, extern_types)]
+#![feature(box_into_raw_non_null, crate_visibility_modifier, optin_builtin_traits, extern_types)]
 
 extern crate ecap_sys as ffi;
 extern crate libc;
@@ -70,6 +70,7 @@ pub mod log;
 mod misc;
 pub use misc::*;
 
+pub mod common;
 pub mod host;
 pub mod adapter;
 pub mod message;
