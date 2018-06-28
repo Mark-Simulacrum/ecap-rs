@@ -1,8 +1,9 @@
-#![feature(optin_builtin_traits, extern_types)]
+#![feature(extern_types)]
 
 extern crate libc;
 
-use std::{mem, ptr, slice};
+use std::{mem, ptr};
+use std::marker::PhantomData;
 
 use libc::{c_char, c_int, c_void, size_t};
 
@@ -32,7 +33,7 @@ pub struct LogVerbosity(pub size_t);
 
 #[repr(C)]
 #[repr(align(8))]
-pub struct SharedPtrMessage([u8; 16]);
+pub struct SharedPtrMessage([u8; 16], PhantomData<*mut ()>);
 
 #[repr(C)]
 pub struct BodySize {
@@ -42,10 +43,8 @@ pub struct BodySize {
 
 #[repr(C)]
 #[repr(align(8))]
-pub struct Name([u8; 40]);
-
-// C++ type in actuality
-impl !Sync for Name {}
+// De-implement send/sync for now
+pub struct Name([u8; 40], PhantomData<*mut ()>);
 
 #[repr(C)]
 pub struct Area {
@@ -205,23 +204,3 @@ extern "C" {
 
     pub fn rust_shim_register_service(service: *mut *mut c_void) -> bool;
 }
-
-pub extern "C" fn visitor_callback(
-    name: *const Name,
-    buf: *const c_char,
-    len: size_t,
-    cb: *const c_void,
-) {
-    assert!(!name.is_null());
-    assert!(!buf.is_null());
-    assert!(!cb.is_null());
-    unsafe {
-        let value = slice::from_raw_parts(buf as *const u8, len);
-        let f: fn(&Name, &[u8]) = mem::transmute(cb);
-        f(&*name, value);
-    }
-}
-
-#[cfg(test)]
-#[no_mangle]
-pub extern "C" fn rust_register_services() {}

@@ -1,4 +1,4 @@
-use Area;
+use common::Area;
 
 /// Equivalent of libecap/adapter/xaction.h
 ///

@@ -1,22 +1,23 @@
-use ffi;
-use libc::{c_char, timeval, c_void};
-use log::Ostream;
-use std::ffi::CStr;
-use std::fmt::Write;
-use std::mem;
+use ecap::adapter::Service;
+use std::{mem, fmt::Write};
+use libc::{timeval, c_char, c_void};
 use std::time::Duration;
-use {Options, Service};
+use std::ffi::CStr;
+use ffi;
 
-crate type ServicePtr = *mut *mut c_void;
+use common::options::CppOptions;
+use common::log::Ostream;
 
-crate unsafe fn to_service<'a>(service: &'a ServicePtr) -> &'a dyn Service {
+pub type ServicePtr = *mut *mut c_void;
+
+unsafe fn to_service<'a>(service: &'a ServicePtr) -> &'a dyn Service {
     assert!(!service.is_null());
     let service: *mut *mut dyn Service = mem::transmute(*service);
     let service = *(service as *mut *mut Service);
     &*service
 }
 
-crate unsafe fn to_service_mut<'a>(service: &'a mut ServicePtr) -> &'a mut dyn Service {
+pub unsafe fn to_service_mut<'a>(service: &'a mut ServicePtr) -> &'a mut dyn Service {
     assert!(!service.is_null());
     let service: *mut *mut dyn Service = mem::transmute(*service);
     let service = *(service as *mut *mut Service);
@@ -79,15 +80,15 @@ pub unsafe extern "C" fn rust_service_tag(service: ServicePtr) -> ffi::CVec {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn rust_service_configure(service: ServicePtr, options: *const Options) {
+pub unsafe extern "C" fn rust_service_configure(service: ServicePtr, options: *const ffi::Options) {
     assert!(!options.is_null());
-    to_service(&service).configure(&*options)
+    to_service(&service).configure(CppOptions::from_ptr(options))
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn rust_service_reconfigure(service: ServicePtr, options: *const Options) {
+pub unsafe extern "C" fn rust_service_reconfigure(service: ServicePtr, options: *const ffi::Options) {
     assert!(!options.is_null());
-    to_service(&service).reconfigure(&*options)
+    to_service(&service).reconfigure(CppOptions::from_ptr(options))
 }
 
 #[no_mangle]

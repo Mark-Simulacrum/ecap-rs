@@ -2,17 +2,5 @@
 name = "ecap"
 version = "0.1.0"
 authors = ["Mark Simulacrum <mark.simulacrum@gmail.com>"]
-autoexamples = false
 
 [dependencies]
-ecap-sys = { path = "../ecap-sys" }
-libc = "0.2"
-lazy_static = "1"
-
-[[example]]
-name = "passthru"
-crate-type = ["cdylib"]
-
-[[example]]
-name = "minimal"
-crate-type = ["cdylib"]

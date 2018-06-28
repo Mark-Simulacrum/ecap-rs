@@ -1,5 +1,7 @@
+use std::fmt;
+
 /// Importance of the logged message to the host application admin
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ImportanceLevel {
     /// Debugging information. Not normally logged.
     Debug = 0,
@@ -12,7 +14,7 @@ pub enum ImportanceLevel {
 }
 
 /// Quantity of messages expected under normal conditions
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FrequencyLevel {
     /// Many times in transaction lifetime
     Operation = 0,
@@ -25,7 +27,7 @@ pub enum FrequencyLevel {
 }
 
 /// Message length in normal conditions
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum MessageSizeLevel {
     /// Regular log line, under ~120 characters
     Normal = 0,
@@ -34,7 +36,7 @@ pub enum MessageSizeLevel {
     Large = 1 << 8,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct LogVerbosity {
     pub importance: ImportanceLevel,
     pub frequency: FrequencyLevel,
@@ -49,4 +51,11 @@ impl LogVerbosity {
             size: MessageSizeLevel::Normal,
         }
     }
+
+    pub fn mask(&self) -> usize {
+        self.importance as usize | self.frequency as usize | self.size as usize
+    }
 }
+
+pub trait DebugStream: fmt::Write { }
+

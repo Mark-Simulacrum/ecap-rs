@@ -1,0 +1,12 @@
+[package]
+name = "ecap-common-link"
+version = "0.1.0"
+authors = ["Mark Simulacrum <mark.simulacrum@gmail.com>"]
+links = "ecap_common"
+build = "src/build.rs"
+
+[dependencies]
+ecap = { path = "../ecap" }
+
+[build-dependencies]
+ecap-common = { path = "../ecap-common" }

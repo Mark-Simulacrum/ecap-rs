@@ -1,28 +1,25 @@
 extern crate ecap;
+extern crate ecap_common_link;
+
+extern "C" fn on_load() {
+    println!("loading minimal adapter crate");
+    ecap_common_link::register_service(MinimalService(10));
+}
+
+#[link_section = ".ctors"]
+pub static _ON_LOAD_PTR: extern "C" fn() = on_load;
 
 use std::ffi::CStr;
 use std::time::Duration;
 
-use ecap::xaction::shim::HostTransaction;
-use ecap::xaction::Transaction;
-use ecap::{AllocatedTransaction, Options, adapter::Service};
-
 #[derive(Debug)]
-struct Minimal(u32);
+pub struct MinimalService(u32);
 
-#[no_mangle]
-pub extern "C" fn rust_register_services() {
-    ecap::register_service(Minimal(0));
-    ecap::register_service(Minimal(1));
-}
+use ecap::host;
+use ecap::common::{Area, Options};
+use ecap::adapter::{Service, Transaction};
 
-impl Service for Minimal {
-    fn make_transaction(&mut self, host: *mut HostTransaction) -> AllocatedTransaction {
-        AllocatedTransaction::new(MinimalXaction {
-            host: unsafe { Some(&mut *host) },
-        })
-    }
-
+impl Service for MinimalService {
     fn uri(&self) -> String {
         format!("ecap://e-cap.org/ecap/services/sample/minimal{}", self.0)
     }
@@ -71,30 +68,22 @@ impl Service for Minimal {
     fn wants_url(&self, _url: &CStr) -> bool {
         true
     }
+
+    fn make_transaction<'a>(&mut self, transaction: &'a mut dyn host::Transaction) -> ecap::AllocatedTransaction<'a> {
+        ecap::AllocatedTransaction::new(MinimalTransaction { hostx: transaction })
+    }
 }
 
-pub struct MinimalXaction<'a> {
-    pub host: Option<&'a mut HostTransaction>,
+pub struct MinimalTransaction<'a> {
+    hostx: &'a mut dyn host::Transaction,
 }
 
-macro_rules! host {
-    ($s:expr) => {
-        $s.host.as_mut().unwrap()
-    };
-}
-
-impl<'a> Transaction for MinimalXaction<'a> {
+impl<'a> Transaction for MinimalTransaction<'a> {
     fn start(&mut self) {
-        println!("starting minimal xaction: will just use virgin");
-        host!(self).use_virgin();
-        self.host = None;
+        self.hostx.use_virgin();
     }
 
-    fn stop(&mut self) {
-        let _ = self.host.take();
-        println!("stopping xaction");
-    }
-
+    fn stop(&mut self) {}
     fn resume(&mut self) {}
     fn adapted_body_discard(&mut self) {}
     fn adapted_body_make(&mut self) {}
@@ -102,19 +91,10 @@ impl<'a> Transaction for MinimalXaction<'a> {
     fn adapted_body_stop_making(&mut self) {}
     fn adapted_body_pause(&mut self) {}
     fn adapted_body_resume(&mut self) {}
-    fn adapted_body_content(&mut self, _offset: usize, _size: usize) -> ecap::Area {
-        ecap::Area::new()
+    fn adapted_body_content(&mut self, _offset: usize, _size: usize) -> Area {
+        Area::from_bytes(&[])
     }
-    fn adapted_body_content_shift(&mut self, _offset: usize) {}
+    fn adapted_body_content_shift(&mut self, _size: usize) {}
     fn virgin_body_content_done(&mut self, _at_end: bool) {}
     fn virgin_body_content_available(&mut self) {}
-}
-
-impl<'a> Drop for MinimalXaction<'a> {
-    fn drop(&mut self) {
-        if let Some(host) = self.host.take() {
-            host.adaptation_aborted();
-        }
-        println!("dropping minimal xaction!");
-    }
 }

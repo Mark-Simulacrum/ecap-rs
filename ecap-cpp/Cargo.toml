@@ -1,0 +1,13 @@
+[package]
+name = "ecap-cpp"
+version = "0.1.0"
+authors = ["Mark Simulacrum <mark.simulacrum@gmail.com>"]
+
+[lib]
+crate-type = ["lib", "cdylib"]
+
+[dependencies]
+ecap = { path = "../ecap" }
+ecap-sys = { path = "../ecap-sys" }
+ecap-common-link = { path = "../ecap-common-link" }
+libc = "0.2"

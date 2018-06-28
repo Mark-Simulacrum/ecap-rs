@@ -1,7 +1,6 @@
 use common::{Name, Area, NamedValueVisitor};
 
-//use common::Version;
-use message::Version;
+use common::Version;
 
 // FIXME: Should we be using `http` crate types?
 //

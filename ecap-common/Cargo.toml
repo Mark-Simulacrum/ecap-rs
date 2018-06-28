@@ -1,0 +1,11 @@
+[package]
+name = "ecap-common"
+version = "0.1.0"
+authors = ["Mark Simulacrum <mark.simulacrum@gmail.com>"]
+
+[lib]
+crate-type = ["dylib", "cdylib"]
+
+[dependencies]
+lazy_static = "1"
+ecap = { path = "../ecap" }

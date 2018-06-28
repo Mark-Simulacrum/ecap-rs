@@ -1,6 +1,5 @@
-use Area;
-use message::{Message, SharedPtrMessage};
-use xaction::shim::Delay;
+use std::sync::Arc;
+use common::{Area, Message, Delay};
 
 /// The host side of the eCAP transaction.
 ///
@@ -43,7 +42,9 @@ pub trait Transaction {
     /// By calling this, the adapter indicates that the host should call
     /// the `adapted_body` methods on the `adapter::Transaction` in
     /// order to receive a message body.
-    fn use_adapted(&mut self, msg: &SharedPtrMessage);
+    ///
+    /// XXX: Arc is too restrictive?
+    fn use_adapted(&mut self, msg: &Arc<dyn Message>);
 
     /// Prevent access to this message.
     ///

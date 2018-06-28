@@ -1,5 +1,6 @@
-use log::{DebugStream, LogVerbosity};
-use message::SharedPtrMessage;
+use common::log::{DebugStream, LogVerbosity};
+use common::Message;
+use std::sync::Arc;
 use std::ffi::CStr;
 
 /// The primary interface for talking to the host itself.
@@ -30,21 +31,29 @@ pub trait Host {
     ///
     /// This absence of a DebugStream is hidden inside the `DebugStream`
     /// type for ease of use.
-    fn open_debug(&mut self, verbosity: LogVerbosity) -> DebugStream;
+    ///
+    /// XXX: Abstract better over debug stream, avoiding allocation
+    fn open_debug(&mut self, verbosity: LogVerbosity) -> Box<dyn DebugStream>;
 
     /// Close a debug stream.
     ///
     /// This will line-terminate the debug stream, as well as optionally
     /// prepend a "header" to the stream.
-    fn close_debug(&mut self, stream: DebugStream);
+    ///
+    /// XXX: Abstract better over debug stream, avoiding allocation
+    fn close_debug(&mut self, stream: Box<dyn DebugStream>);
 
     /// Create a fresh request.
     ///
     /// Utilized when copying an existing Message is not appropriate.
-    fn new_request(&self) -> SharedPtrMessage;
+    ///
+    /// XXX: Arc is maybe wrong type
+    fn new_request(&self) -> Arc<dyn Message>;
 
     /// Create a fresh response.
     ///
     /// Utilized when copying an existing Message is not appropriate.
-    fn new_response(&self) -> SharedPtrMessage;
+    ///
+    /// XXX: Arc is maybe wrong type
+    fn new_response(&self) -> Arc<dyn Message>;
 }

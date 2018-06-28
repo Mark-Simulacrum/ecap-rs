@@ -164,8 +164,6 @@ extern "C" {
     void rust_service_free(const void **);
     const void *rust_xaction_create(const void **, void *);
     void rust_xaction_free(const void *);
-
-    void rust_register_services();
 }
 
 rust_string to_rust_string(const std::string &s) {
@@ -668,11 +666,3 @@ extern "C" void rust_shim_header_visit_each(
 extern "C" bool rust_shim_register_service(const void **service) {
     return libecap::RegisterVersionedService(new Adapter::Service(service));
 }
-
-bool register_services() {
-    rust_register_services();
-    return true;
-}
-
-// create the adapter and register with libecap to reach the host application
-static const bool RegisteredFromRust = register_services();

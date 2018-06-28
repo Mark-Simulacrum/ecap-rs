@@ -1,4 +1,12 @@
 [[package]]
+name = "adapter_minimal"
+version = "0.1.0"
+dependencies = [
+ "ecap 0.1.0",
+ "ecap-common-link 0.1.0",
+]
+
+[[package]]
 name = "cc"
 version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6,9 +14,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "ecap"
 version = "0.1.0"
+
+[[package]]
+name = "ecap-common"
+version = "0.1.0"
 dependencies = [
- "ecap-sys 0.1.0",
+ "ecap 0.1.0",
  "lazy_static 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "ecap-common-link"
+version = "0.1.0"
+dependencies = [
+ "ecap 0.1.0",
+ "ecap-common 0.1.0",
+]
+
+[[package]]
+name = "ecap-cpp"
+version = "0.1.0"
+dependencies = [
+ "ecap 0.1.0",
+ "ecap-common-link 0.1.0",
+ "ecap-sys 0.1.0",
  "libc 0.2.42 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

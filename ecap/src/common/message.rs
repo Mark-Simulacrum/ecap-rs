@@ -3,7 +3,7 @@ use std::sync::Arc;
 use common::Body;
 use common::header::{Header, FirstLine};
 
-pub trait Message<'a> {
+pub trait Message {
     // FIXME: Return type here is too limiting?
     fn clone(&self) -> Arc<dyn Message>;
 

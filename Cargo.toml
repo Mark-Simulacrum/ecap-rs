@@ -1,2 +1,2 @@
 [workspace]
-members = ["ecap", "ecap-sys"]
+members = ["ecap", "ecap-sys", "ecap-cpp", "adapter-minimal", "ecap-common", "ecap-common-link"]
