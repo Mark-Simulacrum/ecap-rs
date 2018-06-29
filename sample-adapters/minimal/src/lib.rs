@@ -1,27 +1,18 @@
 extern crate ecap;
 extern crate ecap_common_link;
 
-extern "C" fn on_load() {
-    println!("loading minimal adapter crate");
-    ecap_common_link::register_service(MinimalService(10));
-}
-
-#[link_section = ".ctors"]
-pub static _ON_LOAD_PTR: extern "C" fn() = on_load;
-
 use std::ffi::CStr;
-use std::time::Duration;
-
-#[derive(Debug)]
-pub struct MinimalService(u32);
 
 use ecap::host;
-use ecap::common::{Area, Options};
+use ecap::common::{Name, NamedValueVisitor, Area, Options};
 use ecap::adapter::{Service, Transaction};
+
+#[derive(Debug)]
+pub struct MinimalService;
 
 impl Service for MinimalService {
     fn uri(&self) -> String {
-        format!("ecap://e-cap.org/ecap/services/sample/minimal{}", self.0)
+        format!("ecap://rust/sample/minimal")
     }
 
     fn configure(&self, _options: &Options) {
@@ -33,39 +24,31 @@ impl Service for MinimalService {
     }
 
     fn tag(&self) -> String {
-        format!("0.0.1")
+        env!("CARGO_PKG_VERSION").to_owned()
     }
 
     fn start(&self) {
-        println!("starting minimal service");
+        // custom code goes here, but none for this service
     }
 
     fn stop(&self) {
-        println!("stopping minimal service");
-    }
-
-    fn suspend(&self, _duration: &mut Duration) {
-        panic!("not an async service");
-    }
-
-    fn resume(&self) {
-        panic!("not an async service");
+        // custom code goes here, but none for this service
     }
 
     fn retire(&self) {
-        println!("retiring minimal service");
+        // custom code goes here, but none for this service
     }
 
     fn describe(&self) -> String {
         format!(
-            "A minimal adapter from {} v{}: {:?}",
+            "A minimal adapter from {} v{}",
             env!("CARGO_PKG_NAME"),
             env!("CARGO_PKG_VERSION"),
-            self
         )
     }
 
     fn wants_url(&self, _url: &CStr) -> bool {
+        // minimal adapter is applied to all messages
         true
     }
 
@@ -98,3 +81,21 @@ impl<'a> Transaction for MinimalTransaction<'a> {
     fn virgin_body_content_done(&mut self, _at_end: bool) {}
     fn virgin_body_content_available(&mut self) {}
 }
+
+impl<'a> Options for MinimalTransaction<'a> {
+    fn option(&self, _name: &Name) -> Option<Area> {
+        // no meta-information to provide
+        None
+    }
+
+    fn visit_each(&self, _visitor: &mut dyn NamedValueVisitor) {
+        // no meta-information to provide
+    }
+}
+
+extern "C" fn on_load() {
+    ecap_common_link::register_service(MinimalService);
+}
+
+#[link_section = ".ctors"]
+pub static _ON_LOAD_PTR: extern "C" fn() = on_load;
