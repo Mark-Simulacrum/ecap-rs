@@ -48,14 +48,18 @@ pub trait Service {
     /// later.
     ///
     /// Only called for async services.
-    fn suspend(&self, timeout: &mut Duration);
+    fn suspend(&self, timeout: &mut Duration) {
+        unimplemented!("Service::suspend is not implemented for this async adapter");
+    }
 
     /// If this is an async service, then this method should
     /// call `host::Transaction::resume` on any transactions which
     /// the host should resume processing.
     ///
     /// Note that it *must not* call any other methods on host::Transaction.
-    fn resume(&self);
+    fn resume(&self) {
+        unimplemented!("Service::suspend is not implemented for this async adapter");
+    }
 
     /// Pause making transactions until `start` is called. Note that it
     /// may not be called.
