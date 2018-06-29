@@ -7,5 +7,5 @@ authors = ["Mark Simulacrum <mark.simulacrum@gmail.com>"]
 crate-type = ["cdylib"]
 
 [dependencies]
-ecap = { path = "../ecap" }
-ecap-common-link = { path = "../ecap-common-link" }
+ecap = { path = "../../ecap" }
+ecap-common-link = { path = "../../ecap-common-link" }
