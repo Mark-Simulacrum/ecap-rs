@@ -1,4 +1,5 @@
 use common::Area;
+use common::Options;
 
 /// Equivalent of libecap/adapter/xaction.h
 ///
@@ -10,7 +11,12 @@ use common::Area;
 /// `stop`.
 ///
 /// All methods on this are intended only for calling by the host.
-pub trait Transaction {
+///
+/// Transactions must also implement `Options` so that hosts can visit
+/// meta-information from them.
+///
+/// XXX: What is the meta information?
+pub trait Transaction: Options {
     /// Called by the host to initiate processing of the virgin request.
     ///
     /// XXX: Confirm that options methods can't be called prior to
