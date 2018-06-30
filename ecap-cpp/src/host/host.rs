@@ -1,6 +1,7 @@
 use ecap::common::log::LogVerbosity;
 use ecap::host::Host;
 
+use common::body::CppBody;
 use common::log::DebugStream;
 use common::message::CppMessage;
 use host::transaction::{CppTransaction, CppTransactionRef};
@@ -13,6 +14,7 @@ impl Host for CppHost {
     type DebugStream = DebugStream;
     type Transaction = CppTransaction;
     type TransactionRef = CppTransactionRef;
+    type Body = CppBody;
 
     fn uri(&self) -> String {
         unimplemented!()

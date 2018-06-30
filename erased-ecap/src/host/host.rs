@@ -1,5 +1,6 @@
 use ecap;
 use ecap::common::log::LogVerbosity;
+use ecap::common::Body;
 //use std::ffi::CStr;
 
 //use adapter::{ErasedService, Service};
@@ -22,6 +23,7 @@ impl ecap::host::Host for dyn Host {
     type DebugStream = Box<dyn DebugStream>;
     type Transaction = Box<dyn Transaction<dyn Host>>;
     type TransactionRef = dyn Transaction<dyn Host>;
+    type Body = dyn Body;
 
     fn uri(&self) -> String {
         (&*self).uri()
@@ -51,7 +53,8 @@ impl ecap::host::Host for dyn Host {
 impl<DS, M, H> Host for H
 where
     H: ecap::host::Host<Message = M, DebugStream = DS> + 'static + ?Sized,
-    M: ecap::common::Message + 'static,
+    // FIXME this bound is quite odd
+    M: ecap::common::Message<H> + ecap::common::Message<dyn Host> + 'static,
     DS: ecap::common::log::DebugStream + 'static,
 {
     fn uri(&self) -> String {

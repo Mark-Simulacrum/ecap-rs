@@ -1,12 +1,12 @@
-use common::{Area, Delay};
+use common::{Area, Delay, Message};
 use host::Host;
 
-mopafy!(Transaction<H: ?Sized + Host>);
+//mopafy!(Transaction<H: ?Sized + Host>);
 
 /// The host side of the eCAP transaction.
 ///
 /// adapter::Transaction implementors use this interface to get virgin messages.
-pub trait Transaction<H: ?Sized + Host>: 'static + ::mopa::Any {
+pub trait Transaction<H: ?Sized + Host> {
     /// Access to the request or the response.
     ///
     /// XXX: Signature will change to &self -> &Message
@@ -44,7 +44,7 @@ pub trait Transaction<H: ?Sized + Host>: 'static + ::mopa::Any {
     /// By calling this, the adapter indicates that the host should call
     /// the `adapted_body` methods on the `adapter::Transaction` in
     /// order to receive a message body.
-    fn use_adapted(&mut self, msg: H::Message);
+    fn use_adapted<M: Message<H> + 'static>(&mut self, msg: M);
 
     /// Prevent access to this message.
     ///
@@ -174,7 +174,7 @@ impl<H: Host + ?Sized, T: ?Sized + Transaction<H>> Transaction<H> for Box<T> {
     fn use_virgin(&mut self) {
         (&mut **self).use_virgin()
     }
-    fn use_adapted(&mut self, msg: H::Message) {
+    fn use_adapted<M: Message<H> + 'static>(&mut self, msg: M) {
         (&mut **self).use_adapted(msg)
     }
     fn block_virgin(&mut self) {

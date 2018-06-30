@@ -4,10 +4,13 @@ use std::{mem, slice};
 
 use ecap::common::{Area, Delay};
 
-use common::message::CppMessage;
+use common::message::{CppMessage, SharedPtrMessage};
+use common::CppArea;
+
 use host::CppHost;
 
 use adapter::service::{to_service_mut, ServicePtr};
+use ecap::common::Message as ConcreteMessage;
 use erased_ecap::adapter::Transaction as ErasedAdapterTransaction;
 use erased_ecap::common::Message as ErasedMessage;
 use erased_ecap::host::Host as ErasedHost;
@@ -35,80 +38,89 @@ impl CppTransaction {
 
 impl ErasedTransaction<dyn ErasedHost> for CppTransaction {
     fn virgin(&mut self) -> &mut dyn ErasedMessage {
-        unimplemented!()
+        <CppTransaction as ConcreteTransaction<CppHost>>::virgin(self)
     }
     fn cause(&mut self) -> &dyn ErasedMessage {
-        unimplemented!()
+        <CppTransaction as ConcreteTransaction<CppHost>>::cause(self)
     }
     fn adapted(&mut self) -> &mut dyn ErasedMessage {
-        unimplemented!()
+        <CppTransaction as ConcreteTransaction<CppHost>>::adapted(self)
     }
     fn use_virgin(&mut self) {
         <CppTransaction as ConcreteTransaction<CppHost>>::use_virgin(self)
     }
-    fn use_adapted(&mut self, _msg: Box<dyn ErasedMessage>) {
-        unimplemented!()
+    fn use_adapted(&mut self, msg: Box<dyn ErasedMessage>) {
+        match msg.downcast::<Box<dyn ErasedMessage>>() {
+            Ok(msg) => match msg.downcast::<SharedPtrMessage>() {
+                Ok(msg) => {
+                    <Self as ConcreteTransaction<CppHost>>::use_adapted::<SharedPtrMessage>(
+                        self, *msg,
+                    );
+                }
+                Err(_) => panic!("use_adapted should be called with result of clone"),
+            },
+            Err(_) => panic!("use_adapted should be called with result of clone, boxed once"),
+        }
     }
     fn block_virgin(&mut self) {
-        unimplemented!()
+        <Self as ConcreteTransaction<CppHost>>::block_virgin(self)
     }
-    fn adaptation_delayed(&mut self, _delay: &Delay) {
-        unimplemented!()
+    fn adaptation_delayed(&mut self, delay: &Delay) {
+        <Self as ConcreteTransaction<CppHost>>::adaptation_delayed(self, delay)
     }
 
     fn adaptation_aborted(&mut self) {
-        unimplemented!()
+        <Self as ConcreteTransaction<CppHost>>::adaptation_aborted(self)
     }
 
     fn resume(&mut self) {
-        unimplemented!()
+        <Self as ConcreteTransaction<CppHost>>::resume(self)
     }
 
     fn virgin_body_discard(&mut self) {
-        unimplemented!()
+        <Self as ConcreteTransaction<CppHost>>::virgin_body_make_more(self)
     }
 
     fn virgin_body_make(&mut self) {
-        unimplemented!()
+        <Self as ConcreteTransaction<CppHost>>::virgin_body_make(self)
     }
 
     fn virgin_body_make_more(&mut self) {
-        unimplemented!()
+        <Self as ConcreteTransaction<CppHost>>::virgin_body_make_more(self)
     }
 
     fn virgin_body_stop_making(&mut self) {
-        unimplemented!()
+        <Self as ConcreteTransaction<CppHost>>::virgin_body_stop_making(self)
     }
 
     fn virgin_body_pause(&mut self) {
-        unimplemented!()
+        <Self as ConcreteTransaction<CppHost>>::virgin_body_pause(self)
     }
 
     fn virgin_body_resume(&mut self) {
-        unimplemented!()
+        <Self as ConcreteTransaction<CppHost>>::virgin_body_resume(self)
     }
 
-    fn virgin_body_content(&mut self, _offset: usize, _size: usize) -> Area {
-        unimplemented!()
+    fn virgin_body_content(&mut self, offset: usize, size: usize) -> Area {
+        <Self as ConcreteTransaction<CppHost>>::virgin_body_content(self, offset, size)
     }
 
-    fn virgin_body_content_shift(&mut self, _size: usize) {
-        unimplemented!()
+    fn virgin_body_content_shift(&mut self, size: usize) {
+        <Self as ConcreteTransaction<CppHost>>::virgin_body_content_shift(self, size)
     }
 
-    fn adapted_body_content_done(&mut self, _at_end: bool) {
-        unimplemented!()
+    fn adapted_body_content_done(&mut self, at_end: bool) {
+        <Self as ConcreteTransaction<CppHost>>::adapted_body_content_done(self, at_end)
     }
 
     fn adapted_body_content_available(&mut self) {
-        unimplemented!()
+        <Self as ConcreteTransaction<CppHost>>::adapted_body_content_available(self)
     }
 }
 
 impl ConcreteTransaction<CppHost> for CppTransaction {
     fn virgin(&mut self) -> &mut CppMessage {
-        unimplemented!()
-        //unsafe { CppMessage::from_ptr_mut(ffi::rust_shim_host_xaction_virgin(self.as_ptr_mut())) }
+        unsafe { CppMessage::from_ptr_mut(ffi::rust_shim_host_xaction_virgin(self.as_ptr_mut())) }
     }
     fn cause(&mut self) -> &CppMessage {
         unimplemented!()
@@ -123,8 +135,18 @@ impl ConcreteTransaction<CppHost> for CppTransaction {
             ffi::rust_shim_host_xaction_use_virgin(self.as_ptr_mut());
         }
     }
-    fn use_adapted(&mut self, _msg: CppMessage) {
-        unimplemented!("no support for sharedptr yet")
+    fn use_adapted<M: 'static + ConcreteMessage<CppHost>>(&mut self, msg: M) {
+        let v: &::std::any::Any = &msg;
+        if let Some(shared_ptr_ref) = v.downcast_ref::<SharedPtrMessage>() {
+            unsafe {
+                ffi::rust_shim_host_xaction_use_adapted(
+                    self.as_ptr_mut(),
+                    <SharedPtrMessage>::as_ptr(shared_ptr_ref),
+                );
+            }
+        } else {
+            panic!("CppTransaction only works with Box<SharedPtrMessage>");
+        }
     }
     fn block_virgin(&mut self) {
         unsafe {
@@ -194,8 +216,7 @@ impl ConcreteTransaction<CppHost> for CppTransaction {
     fn virgin_body_content(&mut self, offset: usize, size: usize) -> Area {
         unsafe {
             let area = ffi::rust_shim_host_xaction_vb_content(self.as_ptr_mut(), offset, size);
-            // FIXME: avoid the copy, and leak
-            Area::from_bytes(slice::from_raw_parts(area.buf as *const u8, area.size))
+            Area::new(CppArea::from_raw(area))
         }
     }
 
@@ -268,10 +289,10 @@ pub unsafe extern "C" fn rust_xaction_ab_content(
     size: size_t,
 ) -> ffi::Area {
     let mut host = CppTransactionRef::from_ptr_mut(host);
-    let area = to_transaction_mut(&mut data).adapted_body_content(&mut host, offset, size);
-    let bytes = area.as_bytes();
-    // FIXME: Avoid the copy
-    ffi::rust_area_new_slice(bytes.as_ptr() as *const c_char, bytes.len())
+    let area = CppArea::from_area(
+        to_transaction_mut(&mut data).adapted_body_content(&mut host, offset, size),
+    );
+    area.into_raw()
 }
 
 #[no_mangle]

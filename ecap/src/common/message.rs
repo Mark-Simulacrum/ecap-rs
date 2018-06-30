@@ -1,14 +1,13 @@
 use common::header::{FirstLine, Header};
-use common::Body;
+use host::Host;
 
-pub trait Message {
+pub trait Message<H: ?Sized + Host> {
     type Header: Header + ?Sized;
     type Trailer: Header + ?Sized;
     type FirstLine: FirstLine + ?Sized;
-    type Body: Body + ?Sized;
 
     // FIXME: Message bound here may be too limiting
-    type MessageClone: Message;
+    type MessageClone: Message<H> + 'static;
 
     fn clone(&self) -> Self::MessageClone;
 
@@ -23,19 +22,18 @@ pub trait Message {
     fn header(&self) -> &Self::Header;
 
     fn add_body(&mut self);
-    fn body_mut(&mut self) -> &mut Self::Body;
-    fn body(&self) -> &Self::Body;
+    fn body_mut(&mut self) -> Option<&mut H::Body>;
+    fn body(&self) -> Option<&H::Body>;
 
     fn add_trailer(&mut self); // XXX: throws by default
     fn trailer_mut(&mut self) -> &mut Self::Trailer;
     fn trailer(&self) -> &Self::Trailer;
 }
 
-impl<T: Message + ?Sized> Message for Box<T> {
+impl<H: Host + ?Sized, T: Message<H> + ?Sized> Message<H> for Box<T> {
     type Header = T::Header;
     type Trailer = T::Trailer;
     type FirstLine = T::FirstLine;
-    type Body = T::Body;
     type MessageClone = T::MessageClone;
 
     fn clone(&self) -> Self::MessageClone {
@@ -59,10 +57,10 @@ impl<T: Message + ?Sized> Message for Box<T> {
     fn add_body(&mut self) {
         (&mut **self).add_body();
     }
-    fn body_mut(&mut self) -> &mut Self::Body {
+    fn body_mut(&mut self) -> Option<&mut H::Body> {
         (&mut **self).body_mut()
     }
-    fn body(&self) -> &Self::Body {
+    fn body(&self) -> Option<&H::Body> {
         (&**self).body()
     }
 

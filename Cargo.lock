@@ -7,6 +7,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "adapter-passthru"
+version = "0.1.0"
+dependencies = [
+ "ecap 0.1.0",
+ "ecap-common-link 0.1.0",
+]
+
+[[package]]
 name = "cc"
 version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"

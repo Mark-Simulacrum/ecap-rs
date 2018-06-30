@@ -1,20 +1,14 @@
 use ffi;
+use std::ops;
 
+use common::body::CppBody;
 use ecap::common::header::{FirstLine, Header};
-use ecap::common::{Area, Body, Message, Name, NamedValueVisitor, Version};
+use ecap::common::{Area, Body, Message as ConcreteMessage, Name, NamedValueVisitor, Version};
+use host::CppHost;
 
-// XXX: this is the wrong type?
-pub type SharedPtrMessage = Box<CppMessage>;
+use erased_ecap::host::Host as ErasedHost;
 
 foreign_ref!(pub struct CppMessage(ffi::Message));
-
-pub struct CppBody;
-
-impl Body for CppBody {
-    fn size(&self) -> Option<u64> {
-        unimplemented!()
-    }
-}
 
 pub struct CppHeader;
 
@@ -98,11 +92,139 @@ impl FirstLine for CppFirstLine {
     }
 }
 
-impl Message for CppMessage {
+impl ConcreteMessage<CppHost> for CppMessage {
     type Header = CppHeader;
     type Trailer = CppTrailer;
     type FirstLine = CppFirstLine;
-    type Body = CppBody;
+    type MessageClone = SharedPtrMessage;
+
+    fn clone(&self) -> Self::MessageClone {
+        unsafe { SharedPtrMessage(Box::new(ffi::rust_shim_message_clone(self.as_ptr()))) }
+    }
+    fn first_line_mut(&mut self) -> &mut Self::FirstLine {
+        unimplemented!()
+    }
+    fn first_line(&self) -> &Self::FirstLine {
+        unimplemented!()
+    }
+    fn header_mut(&mut self) -> &mut Self::Header {
+        unimplemented!()
+    }
+    fn header(&self) -> &Self::Header {
+        unimplemented!()
+    }
+    fn add_body(&mut self) {
+        unimplemented!()
+    }
+    fn body_mut(&mut self) -> Option<&mut CppBody> {
+        unimplemented!()
+    }
+    fn body(&self) -> Option<&CppBody> {
+        unsafe {
+            let ptr = ffi::rust_shim_message_body(self.as_ptr());
+            if ptr.is_null() {
+                None
+            } else {
+                Some(CppBody::from_ptr(ptr))
+            }
+        }
+    }
+    fn add_trailer(&mut self) {
+        unimplemented!()
+    }
+    fn trailer_mut(&mut self) -> &mut Self::Trailer {
+        unimplemented!()
+    }
+    fn trailer(&self) -> &Self::Trailer {
+        unimplemented!()
+    }
+}
+
+impl ConcreteMessage<dyn ErasedHost> for CppMessage {
+    type Header = CppHeader;
+    type Trailer = CppTrailer;
+    type FirstLine = CppFirstLine;
+    type MessageClone = SharedPtrMessage;
+
+    fn clone(&self) -> Self::MessageClone {
+        <Self as ConcreteMessage<CppHost>>::clone(self)
+    }
+    fn first_line_mut(&mut self) -> &mut Self::FirstLine {
+        unimplemented!()
+    }
+    fn first_line(&self) -> &Self::FirstLine {
+        unimplemented!()
+    }
+    fn header_mut(&mut self) -> &mut Self::Header {
+        unimplemented!()
+    }
+    fn header(&self) -> &Self::Header {
+        unimplemented!()
+    }
+    fn add_body(&mut self) {
+        unimplemented!()
+    }
+    fn body_mut(&mut self) -> Option<&mut (dyn Body + 'static)> {
+        unimplemented!()
+    }
+    fn body(&self) -> Option<&(dyn Body + 'static)> {
+        match <Self as ConcreteMessage<CppHost>>::body(self) {
+            Some(body) => Some(body),
+            None => None,
+        }
+    }
+    fn add_trailer(&mut self) {
+        unimplemented!()
+    }
+    fn trailer_mut(&mut self) -> &mut Self::Trailer {
+        unimplemented!()
+    }
+    fn trailer(&self) -> &Self::Trailer {
+        unimplemented!()
+    }
+}
+
+pub struct SharedPtrMessage(pub Box<ffi::SharedPtrMessage>);
+
+impl SharedPtrMessage {
+    pub fn as_ptr(&self) -> *const ffi::SharedPtrMessage {
+        let f: &ffi::SharedPtrMessage = &*self.0;
+        f
+    }
+}
+
+impl ops::Deref for SharedPtrMessage {
+    type Target = CppMessage;
+    fn deref(&self) -> &CppMessage {
+        unsafe {
+            let msg = ffi::rust_shim_shared_ptr_message_ref(&*self.0);
+
+            CppMessage::from_ptr(msg)
+        }
+    }
+}
+
+impl ops::DerefMut for SharedPtrMessage {
+    fn deref_mut(&mut self) -> &mut CppMessage {
+        unsafe {
+            let msg = ffi::rust_shim_shared_ptr_message_ref_mut(&mut *self.0);
+            CppMessage::from_ptr_mut(msg)
+        }
+    }
+}
+
+impl Drop for SharedPtrMessage {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::rust_shim_shared_ptr_message_free(&mut *self.0);
+        }
+    }
+}
+
+impl ConcreteMessage<CppHost> for SharedPtrMessage {
+    type Header = CppHeader;
+    type Trailer = CppTrailer;
+    type FirstLine = CppFirstLine;
     type MessageClone = SharedPtrMessage;
 
     fn clone(&self) -> Self::MessageClone {
@@ -123,11 +245,53 @@ impl Message for CppMessage {
     fn add_body(&mut self) {
         unimplemented!()
     }
-    fn body_mut(&mut self) -> &mut Self::Body {
+    fn body_mut(&mut self) -> Option<&mut CppBody> {
         unimplemented!()
     }
-    fn body(&self) -> &Self::Body {
+    fn body(&self) -> Option<&CppBody> {
         unimplemented!()
+    }
+    fn add_trailer(&mut self) {
+        unimplemented!()
+    }
+    fn trailer_mut(&mut self) -> &mut Self::Trailer {
+        unimplemented!()
+    }
+    fn trailer(&self) -> &Self::Trailer {
+        unimplemented!()
+    }
+}
+
+impl ConcreteMessage<dyn ErasedHost> for SharedPtrMessage {
+    type Header = CppHeader;
+    type Trailer = CppTrailer;
+    type FirstLine = CppFirstLine;
+    type MessageClone = SharedPtrMessage;
+
+    fn clone(&self) -> Self::MessageClone {
+        unimplemented!()
+    }
+    fn first_line_mut(&mut self) -> &mut Self::FirstLine {
+        unimplemented!()
+    }
+    fn first_line(&self) -> &Self::FirstLine {
+        unimplemented!()
+    }
+    fn header_mut(&mut self) -> &mut Self::Header {
+        unimplemented!()
+    }
+    fn header(&self) -> &Self::Header {
+        unimplemented!()
+    }
+    fn add_body(&mut self) {
+        unimplemented!()
+    }
+    fn body_mut(&mut self) -> Option<&mut (dyn Body + 'static)> {
+        unimplemented!()
+    }
+    fn body(&self) -> Option<&(dyn Body + 'static)> {
+        let msg = <Self as ops::Deref>::deref(self);
+        <CppMessage as ConcreteMessage<dyn ErasedHost>>::body(msg)
     }
     fn add_trailer(&mut self) {
         unimplemented!()

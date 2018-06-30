@@ -27,69 +27,9 @@ pub trait Transaction<H: ecap::host::Host + ?Sized> {
     fn adapted_body_content_available(&mut self);
 }
 
-impl Transaction<dyn ErasedHost> for dyn ecap::host::Transaction<dyn ErasedHost> {
-    fn virgin(&mut self) -> &mut dyn Message {
-        unimplemented!()
-    }
-    fn cause(&mut self) -> &dyn Message {
-        unimplemented!()
-    }
-    fn adapted(&mut self) -> &mut dyn Message {
-        unimplemented!()
-    }
-    fn use_virgin(&mut self) {
-        unimplemented!()
-    }
-    fn use_adapted(&mut self, _msg: Box<dyn Message>) {
-        unimplemented!()
-    }
-    fn block_virgin(&mut self) {
-        unimplemented!()
-    }
-    fn adaptation_delayed(&mut self, _delay: &Delay) {
-        unimplemented!()
-    }
-    fn adaptation_aborted(&mut self) {
-        unimplemented!()
-    }
-    fn resume(&mut self) {
-        unimplemented!()
-    }
-    fn virgin_body_discard(&mut self) {
-        unimplemented!()
-    }
-    fn virgin_body_make(&mut self) {
-        unimplemented!()
-    }
-    fn virgin_body_make_more(&mut self) {
-        unimplemented!()
-    }
-    fn virgin_body_stop_making(&mut self) {
-        unimplemented!()
-    }
-    fn virgin_body_pause(&mut self) {
-        unimplemented!()
-    }
-    fn virgin_body_resume(&mut self) {
-        unimplemented!()
-    }
-    fn virgin_body_content(&mut self, _offset: usize, _size: usize) -> Area {
-        unimplemented!()
-    }
-    fn virgin_body_content_shift(&mut self, _size: usize) {
-        unimplemented!()
-    }
-    fn adapted_body_content_done(&mut self, _at_end: bool) {
-        unimplemented!()
-    }
-    fn adapted_body_content_available(&mut self) {
-        unimplemented!()
-    }
-}
-
 impl ecap::host::Transaction<dyn crate::host::Host> for dyn Transaction<dyn crate::host::Host> {
     fn virgin(&mut self) -> &mut dyn Message {
-        unimplemented!()
+        Self::virgin(self)
     }
     fn cause(&mut self) -> &dyn Message {
         unimplemented!()
@@ -100,8 +40,8 @@ impl ecap::host::Transaction<dyn crate::host::Host> for dyn Transaction<dyn crat
     fn use_virgin(&mut self) {
         Self::use_virgin(self)
     }
-    fn use_adapted(&mut self, _msg: Box<dyn Message>) {
-        unimplemented!()
+    fn use_adapted<M: ecap::common::Message<dyn ErasedHost> + 'static>(&mut self, msg: M) {
+        Self::use_adapted(self, Box::new(msg))
     }
     fn block_virgin(&mut self) {
         Self::block_virgin(self)

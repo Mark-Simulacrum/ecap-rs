@@ -1,6 +1,5 @@
 use ecap;
 use ecap::common::{Area, Name, NamedValueVisitor};
-use ecap::host::Host as ConcreteHost;
 
 use common;
 use host::Host as ErasedHost;
