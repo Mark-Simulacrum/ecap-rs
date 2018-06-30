@@ -1,10 +1,16 @@
+//use adapter::Service;
 use common::log::{DebugStream, LogVerbosity};
 use common::Message;
-use std::ffi::CStr;
-use std::sync::Arc;
+//use std::ffi::CStr;
+
+use host::Transaction;
 
 /// The primary interface for talking to the host itself.
 pub trait Host {
+    type DebugStream: DebugStream;
+    type Message: Message;
+    type Transaction: Transaction<Self>;
+
     /// A unique identifer across all vendors.
     fn uri(&self) -> String;
 
@@ -17,7 +23,8 @@ pub trait Host {
     /// was implemented for a different version of libecap.
     ///
     /// XXX: Investigate and document why this takes a weak_ptr.
-    fn note_versioned_service(&mut self, ecap_version: &CStr, service: &());
+    /// XXX: This now takes T: Service, not weak_ptr<Service>. this is different semantics
+    //fn note_versioned_service<T: Service<Self>>(&mut self, ecap_version: &CStr, service: T);
 
     /// Open a logging stream with the given verbosity.
     ///
@@ -29,7 +36,7 @@ pub trait Host {
     /// type for ease of use.
     ///
     /// XXX: Abstract better over debug stream, avoiding allocation
-    fn open_debug(&mut self, verbosity: LogVerbosity) -> Box<dyn DebugStream>;
+    fn open_debug(&mut self, verbosity: LogVerbosity) -> Self::DebugStream;
 
     /// Close a debug stream.
     ///
@@ -37,19 +44,19 @@ pub trait Host {
     /// prepend a "header" to the stream.
     ///
     /// XXX: Abstract better over debug stream, avoiding allocation
-    fn close_debug(&mut self, stream: Box<dyn DebugStream>);
+    fn close_debug(&mut self, stream: Self::DebugStream);
 
     /// Create a fresh request.
     ///
     /// Utilized when copying an existing Message is not appropriate.
     ///
     /// XXX: Arc is maybe wrong type
-    fn new_request(&self) -> Arc<dyn Message>;
+    fn new_request(&self) -> Self::Message;
 
     /// Create a fresh response.
     ///
     /// Utilized when copying an existing Message is not appropriate.
     ///
     /// XXX: Arc is maybe wrong type
-    fn new_response(&self) -> Arc<dyn Message>;
+    fn new_response(&self) -> Self::Message;
 }

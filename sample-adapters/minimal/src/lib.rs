@@ -5,21 +5,27 @@ use std::ffi::CStr;
 
 use ecap::adapter::{Service, Transaction};
 use ecap::common::{Area, Name, NamedValueVisitor, Options};
-use ecap::host;
+use ecap::host::{self, Transaction as HostTransactionTrait};
 
 #[derive(Debug)]
 pub struct MinimalService;
 
-impl Service for MinimalService {
+impl<H> Service<H> for MinimalService
+where
+    H: host::Host + ?Sized,
+    H::Transaction: 'static,
+{
+    type Transaction = MinimalTransaction<'static, H>;
+
     fn uri(&self) -> String {
         format!("ecap://rust/sample/minimal")
     }
 
-    fn configure(&self, _options: &Options) {
+    fn configure<T: Options + ?Sized>(&self, _options: &T) {
         // no configuration
     }
 
-    fn reconfigure(&self, _options: &Options) {
+    fn reconfigure<T: Options + ?Sized>(&self, _options: &T) {
         // no configuration
     }
 
@@ -52,19 +58,21 @@ impl Service for MinimalService {
         true
     }
 
-    fn make_transaction<'a>(
-        &mut self,
-        transaction: &'a mut dyn host::Transaction,
-    ) -> ecap::AllocatedTransaction<'a> {
-        ecap::AllocatedTransaction::new(MinimalTransaction { hostx: transaction })
+    fn make_transaction(&mut self, _transaction: &mut H::Transaction) -> Self::Transaction {
+        unimplemented!()
+        //MinimalTransaction { hostx: transaction }
+        //ecap::AllocatedTransaction::new(MinimalTransaction { hostx: transaction })
     }
 }
 
-pub struct MinimalTransaction<'a> {
-    hostx: &'a mut dyn host::Transaction,
+pub struct MinimalTransaction<'a, H: host::Host + ?Sized>
+where
+    H::Transaction: 'a,
+{
+    hostx: &'a mut H::Transaction,
 }
 
-impl<'a> Transaction for MinimalTransaction<'a> {
+impl<'a, H: ?Sized + host::Host> Transaction for MinimalTransaction<'a, H> {
     fn start(&mut self) {
         self.hostx.use_virgin();
     }
@@ -85,19 +93,19 @@ impl<'a> Transaction for MinimalTransaction<'a> {
     fn virgin_body_content_available(&mut self) {}
 }
 
-impl<'a> Options for MinimalTransaction<'a> {
-    fn option(&self, _name: &Name) -> Option<Area> {
+impl<'a, H: ?Sized + host::Host> Options for MinimalTransaction<'a, H> {
+    fn option(&self, _name: &Name) -> Option<&Area> {
         // no meta-information to provide
         None
     }
 
-    fn visit_each(&self, _visitor: &mut dyn NamedValueVisitor) {
+    fn visit_each<V: NamedValueVisitor>(&self, _visitor: V) {
         // no meta-information to provide
     }
 }
 
 extern "C" fn on_load() {
-    ecap_common_link::register_service(MinimalService);
+    ecap_common_link::register_erased_service(MinimalService);
 }
 
 #[link_section = ".ctors"]

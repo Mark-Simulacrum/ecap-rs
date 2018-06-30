@@ -1,5 +1,5 @@
 [package]
-name = "adapter_minimal"
+name = "adapter-minimal"
 version = "0.1.0"
 authors = ["Mark Simulacrum <mark.simulacrum@gmail.com>"]
 

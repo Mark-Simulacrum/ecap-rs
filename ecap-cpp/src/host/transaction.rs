@@ -3,31 +3,49 @@ use ffi;
 use libc::{c_char, c_void, size_t};
 use std::{mem, slice};
 
-use ecap::adapter;
-use ecap::common::{Area, Delay, Message};
+use ecap::common::{Area, Delay};
 
-use common::message::{CppMessage, SharedPtrMessage};
+use common::message::CppMessage;
+use host::CppHost;
+
+//use common::message::{CppMessage, SharedPtrMessage};
 
 use adapter::service::{to_service_mut, ServicePtr};
 
-foreign_ref!(pub struct Transaction(ffi::HostTransaction));
+//foreign_ref!(pub struct Transaction(ffi::HostTransaction));
+pub struct CppTransaction {
+    hostx: *mut ffi::HostTransaction,
+}
 
-impl host::Transaction for Transaction {
-    fn virgin(&mut self) -> &mut dyn Message {
-        unsafe { CppMessage::from_ptr_mut(ffi::rust_shim_host_xaction_virgin(self.as_ptr_mut())) }
+impl CppTransaction {
+    fn from_ptr_mut(ptr: *mut ffi::HostTransaction) -> Self {
+        CppTransaction { hostx: ptr }
     }
-    fn cause(&mut self) -> &dyn Message {
-        unsafe { CppMessage::from_ptr(ffi::rust_shim_host_xaction_cause(self.as_ptr_mut())) }
+
+    fn as_ptr_mut(&mut self) -> *mut ffi::HostTransaction {
+        self.hostx as *mut ffi::HostTransaction
     }
-    fn adapted(&mut self) -> &mut dyn Message {
-        unsafe { CppMessage::from_ptr_mut(ffi::rust_shim_host_xaction_adapted(self.as_ptr_mut())) }
+}
+
+impl host::Transaction<CppHost> for CppTransaction {
+    fn virgin(&mut self) -> &mut CppMessage {
+        unimplemented!()
+        //unsafe { CppMessage::from_ptr_mut(ffi::rust_shim_host_xaction_virgin(self.as_ptr_mut())) }
+    }
+    fn cause(&mut self) -> &CppMessage {
+        unimplemented!()
+        //unsafe { CppMessage::from_ptr(ffi::rust_shim_host_xaction_cause(self.as_ptr_mut())) }
+    }
+    fn adapted(&mut self) -> &mut CppMessage {
+        unimplemented!()
+        //unsafe { CppMessage::from_ptr_mut(ffi::rust_shim_host_xaction_adapted(self.as_ptr_mut())) }
     }
     fn use_virgin(&mut self) {
         unsafe {
             ffi::rust_shim_host_xaction_use_virgin(self.as_ptr_mut());
         }
     }
-    fn use_adapted(&mut self, _msg: &SharedPtrMessage) {
+    fn use_adapted(&mut self, _msg: CppMessage) {
         unimplemented!("no support for sharedptr yet")
     }
     fn block_virgin(&mut self) {
@@ -118,20 +136,25 @@ impl host::Transaction for Transaction {
 
 type TransactionPtr = *mut *mut c_void;
 
+use erased_ecap::adapter::Transaction as AdapterTransaction;
+//use erased_ecap::adapter::Transaction as ErasedTransaction;
+
 #[allow(unused)]
-unsafe fn to_transaction<'a>(transaction: &'a TransactionPtr) -> &'a dyn adapter::Transaction {
+unsafe fn to_transaction<'a>(transaction: &'a TransactionPtr) -> &'a dyn AdapterTransaction {
+    //unimplemented!()
     assert!(!transaction.is_null());
-    let transaction: *mut *mut dyn adapter::Transaction = mem::transmute(*transaction);
-    let transaction = *(transaction as *mut *mut dyn adapter::Transaction);
+    let transaction: *mut *mut dyn AdapterTransaction = mem::transmute(*transaction);
+    let transaction = *(transaction as *mut *mut dyn AdapterTransaction);
     &*transaction
 }
 
 unsafe fn to_transaction_mut<'a>(
     transaction: &'a mut TransactionPtr,
-) -> &'a mut dyn adapter::Transaction {
+) -> &'a mut dyn AdapterTransaction {
+    //unimplemented!()
     assert!(!transaction.is_null());
-    let transaction: *mut *mut dyn adapter::Transaction = mem::transmute(*transaction);
-    let transaction = *(transaction as *mut *mut dyn adapter::Transaction);
+    let transaction: *mut *mut dyn AdapterTransaction = mem::transmute(*transaction);
+    let transaction = *(transaction as *mut *mut dyn AdapterTransaction);
     &mut *transaction
 }
 
@@ -183,20 +206,25 @@ pub unsafe extern "C" fn rust_xaction_vb_content_done(mut data: TransactionPtr, 
 #[no_mangle]
 pub unsafe extern "C" fn rust_xaction_create(
     mut service: ServicePtr,
-    host: *mut Transaction,
+    host: *mut ffi::HostTransaction,
 ) -> TransactionPtr {
+    use erased_ecap;
+    let host = CppTransaction::from_ptr_mut(host);
     let service = to_service_mut(&mut service);
-    let transaction = service.make_transaction(&mut *host); // FIXME cannot provide mut direct
-    let ptr = Box::into_raw(transaction.0);
-    let transaction_ptr: Box<*mut dyn adapter::Transaction> = Box::new(ptr);
+    let mut host_: Box<dyn erased_ecap::host::Transaction<CppHost>> = Box::new(host);
+    let transaction = service.make_transaction(&mut host_); // FIXME cannot provide mut direct
+
+    let ptr = Box::into_raw(transaction);
+    let transaction_ptr: Box<*mut dyn erased_ecap::adapter::Transaction> = Box::new(ptr);
     Box::into_raw(transaction_ptr) as *mut *mut c_void
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn rust_xaction_free(transaction: TransactionPtr) {
-    assert!(!transaction.is_null());
-    let ptr: Box<*mut dyn adapter::Transaction> =
-        Box::from_raw(transaction as *mut *mut dyn adapter::Transaction);
-    let tr: Box<dyn adapter::Transaction> = Box::from_raw(*ptr);
-    mem::drop(tr);
+    unimplemented!()
+    //assert!(!transaction.is_null());
+    //let ptr: Box<*mut dyn adapter::Transaction> =
+    //    Box::from_raw(transaction as *mut *mut dyn adapter::Transaction);
+    //let tr: Box<dyn adapter::Transaction> = Box::from_raw(*ptr);
+    //mem::drop(tr);
 }

@@ -1,0 +1,8 @@
+[package]
+name = "erased-ecap"
+version = "0.1.0"
+authors = ["Mark Rousskov <mark.simulacrum@gmail.com>"]
+
+[dependencies]
+ecap = { path = "../ecap" }
+mopa = "0.2"

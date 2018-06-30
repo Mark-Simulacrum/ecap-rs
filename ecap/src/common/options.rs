@@ -10,10 +10,22 @@ pub trait Options {
     /// Returns the value of the named option.
     ///
     /// `None` is returned if unknown or nonexistant.
-    fn option(&self, name: &Name) -> Option<Area>;
+    fn option(&self, name: &Name) -> Option<&Area>;
 
     /// Calls visitor for each `(Name, Area)` pair.
     ///
     /// Accesses all options, including those whose `Name` is unknown.
-    fn visit_each(&self, visitor: &mut dyn NamedValueVisitor);
+    fn visit_each<V: NamedValueVisitor>(&self, visitor: V);
+}
+
+impl<T> Options for Box<T>
+where
+    T: Options + ?Sized,
+{
+    fn option(&self, name: &Name) -> Option<&Area> {
+        (&**self).option(name)
+    }
+    fn visit_each<V: NamedValueVisitor>(&self, visitor: V) {
+        (&**self).visit_each(visitor)
+    }
 }

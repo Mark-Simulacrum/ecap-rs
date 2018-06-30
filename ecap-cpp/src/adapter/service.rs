@@ -1,4 +1,3 @@
-use ecap::adapter::Service;
 use ffi;
 use libc::{c_char, c_void, timeval};
 use std::ffi::CStr;
@@ -7,20 +6,23 @@ use std::{fmt::Write, mem};
 
 use common::log::Ostream;
 use common::options::CppOptions;
+use erased_ecap::adapter::Service;
+
+use erased_ecap::host::Host;
 
 pub type ServicePtr = *mut *mut c_void;
 
-unsafe fn to_service<'a>(service: &'a ServicePtr) -> &'a dyn Service {
+unsafe fn to_service<'a>(service: &'a ServicePtr) -> &'a dyn Service<dyn Host> {
     assert!(!service.is_null());
-    let service: *mut *mut dyn Service = mem::transmute(*service);
-    let service = *(service as *mut *mut Service);
+    let service: *mut *mut dyn Service<dyn Host> = mem::transmute(*service);
+    let service = *service;
     &*service
 }
 
-pub unsafe fn to_service_mut<'a>(service: &'a mut ServicePtr) -> &'a mut dyn Service {
+pub unsafe fn to_service_mut<'a>(service: &'a mut ServicePtr) -> &'a mut dyn Service<dyn Host> {
     assert!(!service.is_null());
-    let service: *mut *mut dyn Service = mem::transmute(*service);
-    let service = *(service as *mut *mut Service);
+    let service: *mut *mut dyn Service<dyn Host> = mem::transmute(*service);
+    let service = *service;
     &mut *service
 }
 
@@ -103,6 +105,7 @@ pub unsafe extern "C" fn rust_service_wants_url(service: ServicePtr, url: *const
 #[no_mangle]
 pub unsafe extern "C" fn rust_service_free(service: ServicePtr) {
     assert!(!service.is_null());
-    let service: Box<dyn Service> = Box::from_raw(*(service as *mut *mut Service));
+    let service: Box<dyn Service<dyn Host>> =
+        Box::from_raw(*(service as *mut *mut Service<dyn Host>));
     mem::drop(service);
 }

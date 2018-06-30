@@ -9,3 +9,4 @@ crate-type = ["dylib", "cdylib"]
 [dependencies]
 lazy_static = "1"
 ecap = { path = "../ecap" }
+erased-ecap = { path = "../erased-ecap" }

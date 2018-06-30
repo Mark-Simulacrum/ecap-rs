@@ -6,22 +6,23 @@ use ecap::common::{Area, Name, NamedValueVisitor, Options};
 foreign_ref!(pub struct CppOptions(ffi::Options));
 
 impl Options for CppOptions {
-    fn option(&self, name: &Name) -> Option<Area> {
-        let name_s = name.image().unwrap_or("".into());
-        unsafe {
-            let area = ffi::options_option(
-                self as *const _ as *const _,
-                name_s.as_ptr() as *const _,
-                name_s.len(),
-            );
-            Some(Area::from_bytes(::std::slice::from_raw_parts(
-                area.buf as *mut u8 as *const u8,
-                area.size,
-            )))
-        }
+    fn option(&self, name: &Name) -> Option<&Area> {
+        unimplemented!()
+        //let name_s = name.image().unwrap_or("".into());
+        //unsafe {
+        //    let area = ffi::options_option(
+        //        self as *const _ as *const _,
+        //        name_s.as_ptr() as *const _,
+        //        name_s.len(),
+        //    );
+        //    Some(Area::from_bytes(::std::slice::from_raw_parts(
+        //        area.buf as *mut u8 as *const u8,
+        //        area.size,
+        //    )))
+        //}
     }
 
-    fn visit_each(&self, mut visitor: &mut dyn NamedValueVisitor) {
+    fn visit_each<V: NamedValueVisitor>(&self, mut visitor: V) {
         let visitor_ptr = &mut visitor;
         unsafe {
             ffi::options_visit(

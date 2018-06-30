@@ -1,14 +1,16 @@
-use common::{Area, Delay, Message};
-use std::sync::Arc;
+use common::{Area, Delay};
+use host::Host;
+
+use std::any::TypeId;
 
 /// The host side of the eCAP transaction.
 ///
 /// adapter::Transaction implementors use this interface to get virgin messages.
-pub trait Transaction {
+pub trait Transaction<H: ?Sized + Host>: 'static {
     /// Access to the request or the response.
     ///
     /// XXX: Signature will change to &self -> &Message
-    fn virgin(&mut self) -> &mut Message;
+    fn virgin(&mut self) -> &mut H::Message;
 
     /// Other side of the request/response pair, as compared to `virgin`.
     ///
@@ -16,7 +18,7 @@ pub trait Transaction {
     /// a proxy, as there is no cause in that case.
     ///
     /// XXX: Signature will change to &self -> Option<&Message>
-    fn cause(&mut self) -> &Message;
+    fn cause(&mut self) -> &H::Message;
 
     /// The message passed to `use_adapted`.
     ///
@@ -27,7 +29,7 @@ pub trait Transaction {
     /// shared_ptr that is given to `use_adapted`?
     ///
     /// XXX: Signature will change to &self -> Option<&Message>
-    fn adapted(&mut self) -> &mut Message;
+    fn adapted(&mut self) -> &mut H::Message;
 
     /// Use the virgin message for response/request.
     ///
@@ -42,9 +44,7 @@ pub trait Transaction {
     /// By calling this, the adapter indicates that the host should call
     /// the `adapted_body` methods on the `adapter::Transaction` in
     /// order to receive a message body.
-    ///
-    /// XXX: Arc is too restrictive?
-    fn use_adapted(&mut self, msg: &Arc<dyn Message>);
+    fn use_adapted(&mut self, msg: H::Message);
 
     /// Prevent access to this message.
     ///
@@ -159,4 +159,68 @@ pub trait Transaction {
     ///
     /// [`adapter::Transaction::virgin_body_content_available`]: `::adapter::Transaction::virgin_body_content_available`
     fn adapted_body_content_available(&mut self);
+
+    fn __get_type_id(&self) -> TypeId {
+        TypeId::of::<Self>()
+    }
+}
+
+impl<H: Host + ?Sized, T: ?Sized + Transaction<H>> Transaction<H> for Box<T> {
+    fn virgin(&mut self) -> &mut H::Message {
+        (&mut **self).virgin()
+    }
+    fn cause(&mut self) -> &H::Message {
+        (&mut **self).cause()
+    }
+    fn adapted(&mut self) -> &mut H::Message {
+        (&mut **self).adapted()
+    }
+    fn use_virgin(&mut self) {
+        (&mut **self).use_virgin()
+    }
+    fn use_adapted(&mut self, msg: H::Message) {
+        (&mut **self).use_adapted(msg)
+    }
+    fn block_virgin(&mut self) {
+        (&mut **self).block_virgin()
+    }
+    fn adaptation_delayed(&mut self, delay: &Delay) {
+        (&mut **self).adaptation_delayed(delay)
+    }
+    fn adaptation_aborted(&mut self) {
+        (&mut **self).adaptation_aborted()
+    }
+    fn resume(&mut self) {
+        (&mut **self).resume()
+    }
+    fn virgin_body_discard(&mut self) {
+        (&mut **self).virgin_body_discard()
+    }
+    fn virgin_body_make(&mut self) {
+        (&mut **self).virgin_body_make()
+    }
+    fn virgin_body_make_more(&mut self) {
+        (&mut **self).virgin_body_make_more()
+    }
+    fn virgin_body_stop_making(&mut self) {
+        (&mut **self).virgin_body_stop_making()
+    }
+    fn virgin_body_pause(&mut self) {
+        (&mut **self).virgin_body_pause()
+    }
+    fn virgin_body_resume(&mut self) {
+        (&mut **self).virgin_body_resume()
+    }
+    fn virgin_body_content(&mut self, offset: usize, size: usize) -> Area {
+        (&mut **self).virgin_body_content(offset, size)
+    }
+    fn virgin_body_content_shift(&mut self, size: usize) {
+        (&mut **self).virgin_body_content_shift(size)
+    }
+    fn adapted_body_content_done(&mut self, at_end: bool) {
+        (&mut **self).adapted_body_content_done(at_end)
+    }
+    fn adapted_body_content_available(&mut self) {
+        (&mut **self).adapted_body_content_available()
+    }
 }

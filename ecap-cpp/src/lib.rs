@@ -1,6 +1,7 @@
 extern crate ecap;
 extern crate ecap_common_link;
 extern crate ecap_sys as ffi;
+extern crate erased_ecap;
 extern crate libc;
 
 macro_rules! foreign_ref {
@@ -40,24 +41,24 @@ pub mod host;
 use ecap::adapter::Service;
 use libc::c_void;
 
-pub fn register_service<T: Service>(service: T) {
-    unsafe {
-        let service: Box<dyn Service> = Box::new(service);
-        let ptr = Box::into_raw(service);
-        let service_ptr: Box<*mut dyn Service> = Box::new(ptr);
-        let ptr = Box::into_raw(service_ptr) as *mut *mut c_void;
-        ffi::rust_shim_register_service(ptr);
-    }
-}
+//pub fn register_service<H: ?Sized + ecap::host::Host, T: Service<H>>(service: T) {
+//    unimplemented!()
+//    //unsafe {
+//    //    let service: Box<dyn Service> = Box::new(service);
+//    //    let ptr = Box::into_raw(service);
+//    //    let service_ptr: Box<*mut dyn Service> = Box::new(ptr);
+//    //    let ptr = Box::into_raw(service_ptr) as *mut *mut c_void;
+//    //    ffi::rust_shim_register_service(ptr);
+//    //}
+//}
 
 use ecap::Translator;
 
 struct CppTranslator;
 
 impl Translator for CppTranslator {
-    fn register_service(&self, service: Box<dyn Service + Send + Sync>) {
-        let ptr = Box::into_raw(service);
-        let thin_ptr = Box::into_raw(Box::new(ptr));
+    fn register_service<H: ecap::host::Host + ?Sized, T: Service<H>>(&self, service: T) {
+        let thin_ptr = Box::into_raw(Box::new(service));
         unsafe {
             ffi::rust_shim_register_service(thin_ptr as *mut *mut c_void);
         }
@@ -65,7 +66,7 @@ impl Translator for CppTranslator {
 }
 
 extern "C" fn on_load() {
-    ecap_common_link::register_translator(CppTranslator);
+    ecap_common_link::register_erased_translator(CppTranslator);
 }
 
 #[link_section = ".ctors"]

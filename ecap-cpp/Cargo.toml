@@ -8,6 +8,7 @@ crate-type = ["lib", "cdylib"]
 
 [dependencies]
 ecap = { path = "../ecap" }
+erased-ecap = { path = "../erased-ecap" }
 ecap-sys = { path = "../ecap-sys" }
 ecap-common-link = { path = "../ecap-common-link" }
 libc = "0.2"

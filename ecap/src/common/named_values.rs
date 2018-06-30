@@ -4,8 +4,8 @@ pub trait NamedValueVisitor {
     fn visit(&mut self, name: &Name, value: &Area);
 }
 
-impl<F: FnMut(&Name, &Area)> NamedValueVisitor for F {
+impl<'a, T: ?Sized + NamedValueVisitor> NamedValueVisitor for &'a mut T {
     fn visit(&mut self, name: &Name, value: &Area) {
-        (self)(name, value)
+        (&mut **self).visit(name, value);
     }
 }

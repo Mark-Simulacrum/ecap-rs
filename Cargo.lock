@@ -1,5 +1,5 @@
 [[package]]
-name = "adapter_minimal"
+name = "adapter-minimal"
 version = "0.1.0"
 dependencies = [
  "ecap 0.1.0",
@@ -20,6 +20,7 @@ name = "ecap-common"
 version = "0.1.0"
 dependencies = [
  "ecap 0.1.0",
+ "erased-ecap 0.1.0",
  "lazy_static 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -29,6 +30,7 @@ version = "0.1.0"
 dependencies = [
  "ecap 0.1.0",
  "ecap-common 0.1.0",
+ "erased-ecap 0.1.0",
 ]
 
 [[package]]
@@ -38,6 +40,7 @@ dependencies = [
  "ecap 0.1.0",
  "ecap-common-link 0.1.0",
  "ecap-sys 0.1.0",
+ "erased-ecap 0.1.0",
  "libc 0.2.42 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -50,6 +53,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "erased-ecap"
+version = "0.1.0"
+dependencies = [
+ "ecap 0.1.0",
+ "mopa 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -59,7 +70,13 @@ name = "libc"
 version = "0.2.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
+[[package]]
+name = "mopa"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
 [metadata]
 "checksum cc 1.0.17 (registry+https://github.com/rust-lang/crates.io-index)" = "49ec142f5768efb5b7622aebc3fdbdbb8950a4b9ba996393cb76ef7466e8747d"
 "checksum lazy_static 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "e6412c5e2ad9584b0b8e979393122026cdd6d2a80b933f890dcd694ddbe73739"
 "checksum libc 0.2.42 (registry+https://github.com/rust-lang/crates.io-index)" = "b685088df2b950fccadf07a7187c8ef846a959c142338a48f9dc0b94517eb5f1"
+"checksum mopa 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "a785740271256c230f57462d3b83e52f998433a7062fc18f96d5999474a9f915"

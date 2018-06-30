@@ -1,13 +1,12 @@
 use std::ffi::CStr;
 use std::time::Duration;
 
-use AllocatedTransaction;
-
-use common::Options;
-use host;
+use {adapter, common::Options, host};
 
 /// This trait is the equivalent of libecap::adapter::Service.
-pub trait Service {
+pub trait Service<H: ?Sized + host::Host> {
+    type Transaction: adapter::Transaction;
+
     /// The returned string should be unique across vendors.
     fn uri(&self) -> String;
 
@@ -27,13 +26,14 @@ pub trait Service {
     }
 
     /// Called by the Host to initially configure the adapter service.
+    ///
     /// Should only be called once.
-    fn configure(&self, options: &Options);
+    fn configure<T: Options>(&self, options: &T);
 
-    /// Called by the host when the configuration for an
-    /// adapter changes. It may be called with the same configuration
-    /// as passed previously.
-    fn reconfigure(&self, options: &Options);
+    /// Called by the host when the configuration for an adapter
+    /// changes. It may be called with the same configuration as passed
+    /// previously.
+    fn reconfigure<T: Options>(&self, options: &T);
 
     /// Prepare for creation of transactions via `make_transaction` calls.
     fn start(&self);
@@ -48,7 +48,7 @@ pub trait Service {
     /// later.
     ///
     /// Only called for async services.
-    fn suspend(&self, timeout: &mut Duration) {
+    fn suspend(&self, _timeout: &mut Duration) {
         unimplemented!("Service::suspend is not implemented for this async adapter");
     }
 
@@ -76,9 +76,57 @@ pub trait Service {
     fn wants_url(&self, url: &CStr) -> bool;
 
     /// Create a transaction to give to the Host.
-    fn make_transaction<'a>(&mut self, host: &'a mut host::Transaction)
-        -> AllocatedTransaction<'a>;
+    fn make_transaction(&mut self, host: &mut H::Transaction) -> Self::Transaction;
 
     // FIXME: libecap API also exposes a shared_ptr to self in public
     // API
+}
+
+impl<H, S: Service<H> + ?Sized> Service<H> for Box<S>
+where
+    H: ?Sized,
+    H: host::Host,
+{
+    type Transaction = S::Transaction;
+
+    fn uri(&self) -> String {
+        (&**self).uri()
+    }
+    fn tag(&self) -> String {
+        (&**self).tag()
+    }
+    fn describe(&self) -> String {
+        (&**self).describe()
+    }
+    fn configure<T: Options>(&self, options: &T) {
+        (&**self).configure(options)
+    }
+    fn reconfigure<T: Options>(&self, options: &T) {
+        (&**self).reconfigure(options)
+    }
+    fn start(&self) {
+        (&**self).start()
+    }
+    fn stop(&self) {
+        (&**self).stop()
+    }
+    fn retire(&self) {
+        (&**self).retire()
+    }
+    fn wants_url(&self, url: &CStr) -> bool {
+        (&**self).wants_url(url)
+    }
+    fn make_transaction(&mut self, host: &mut H::Transaction) -> Self::Transaction {
+        (&mut **self).make_transaction(host)
+    }
+
+    fn is_async(&self) -> bool {
+        (&**self).is_async()
+    }
+    fn suspend(&self, timeout: &mut Duration) {
+        (&**self).suspend(timeout)
+    }
+    fn resume(&self) {
+        (&**self).resume()
+    }
 }

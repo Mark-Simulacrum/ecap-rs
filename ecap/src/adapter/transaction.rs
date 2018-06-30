@@ -1,5 +1,4 @@
-use common::Area;
-use common::Options;
+use common::{Area, Options};
 
 /// Equivalent of libecap/adapter/xaction.h
 ///
@@ -166,4 +165,49 @@ pub trait Transaction: Options {
     /// This method may be called and no additional virgin body content
     /// may be returned: it does not represent fact, merely a hint.
     fn virgin_body_content_available(&mut self);
+}
+
+impl<T> Transaction for Box<T>
+where
+    T: Options + Transaction + ?Sized,
+{
+    fn start(&mut self) {
+        (&mut **self).start()
+    }
+    fn stop(&mut self) {
+        (&mut **self).stop()
+    }
+    fn resume(&mut self) {
+        (&mut **self).resume()
+    }
+    fn adapted_body_discard(&mut self) {
+        (&mut **self).adapted_body_discard()
+    }
+    fn adapted_body_make(&mut self) {
+        (&mut **self).adapted_body_make()
+    }
+    fn adapted_body_make_more(&mut self) {
+        (&mut **self).adapted_body_make_more()
+    }
+    fn adapted_body_stop_making(&mut self) {
+        (&mut **self).adapted_body_stop_making()
+    }
+    fn adapted_body_pause(&mut self) {
+        (&mut **self).adapted_body_pause()
+    }
+    fn adapted_body_resume(&mut self) {
+        (&mut **self).adapted_body_resume()
+    }
+    fn adapted_body_content(&mut self, offset: usize, size: usize) -> Area {
+        (&mut **self).adapted_body_content(offset, size)
+    }
+    fn adapted_body_content_shift(&mut self, size: usize) {
+        (&mut **self).adapted_body_content_shift(size)
+    }
+    fn virgin_body_content_done(&mut self, at_end: bool) {
+        (&mut **self).virgin_body_content_done(at_end)
+    }
+    fn virgin_body_content_available(&mut self) {
+        (&mut **self).virgin_body_content_available()
+    }
 }

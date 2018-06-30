@@ -7,6 +7,7 @@ build = "src/build.rs"
 
 [dependencies]
 ecap = { path = "../ecap" }
+erased-ecap = { path = "../erased-ecap" }
 
 [build-dependencies]
 ecap-common = { path = "../ecap-common" }

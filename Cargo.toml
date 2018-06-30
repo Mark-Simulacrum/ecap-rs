@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "ecap",
+    "erased-ecap",
     "ecap-sys",
     "ecap-cpp",
     "ecap-common",

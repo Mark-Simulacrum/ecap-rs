@@ -1,17 +1,13 @@
-use common::{Area, Name, NamedValueVisitor};
-
-use common::Version;
-
-// FIXME: Should we be using `http` crate types?
-//
-// Maybe. It would allow easier interop, but also imposes standard Rust
-// library types that don't fit the libecap model as well.
+use common::{Area, Name, NamedValueVisitor, Version};
 
 /// This represents a header structure.
 ///
 /// It contains many fields, and is essentially a map of Name to Area.
-pub trait Header<'a> {
+pub trait Header {
     /// Returns true if this header has at least one field with the specified Name.
+    ///
+    /// XXX: This should possibly do something like std's contains methods with Borrow<Self::Name>
+    /// instead.
     fn contains_field(&self, field: &Name) -> bool;
 
     /// Get the specified field(s) by `Name`.
@@ -21,7 +17,7 @@ pub trait Header<'a> {
     ///
     /// This returns an owned `Area` because it may need to allocate in
     /// the list case.
-    fn get(&self, field: &Name) -> Option<Area>;
+    fn get(&self, field: &Name) -> Option<&Area>;
 
     /// Insert a field, value pair into the header.
     fn insert(&mut self, field: Name, value: Area);
@@ -30,13 +26,14 @@ pub trait Header<'a> {
     fn remove_any(&mut self, field: &Name);
 
     /// Visit each entry in the header
-    // XXX: don't erase the type here
-    fn visit_each(&self, visitor: &mut dyn NamedValueVisitor);
+    fn visit_each<V: NamedValueVisitor>(&self, visitor: &mut V);
 
     /// Area view on the underlying buffer representing this header.
     fn image(&self) -> &Area;
 
     /// Parses a given buffer into this Header.
+    ///
+    /// XXX: Should this be Self::Area?
     // XXX: error handling
     fn parse(&mut self, buf: &Area) -> Result<(), ()>;
 }
