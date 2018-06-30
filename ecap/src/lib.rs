@@ -1,6 +1,6 @@
+pub mod adapter;
 pub mod common;
 pub mod host;
-pub mod adapter;
 
 use adapter::{Service, Transaction};
 

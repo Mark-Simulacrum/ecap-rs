@@ -1,7 +1,7 @@
 use common::log::{DebugStream, LogVerbosity};
 use common::Message;
-use std::sync::Arc;
 use std::ffi::CStr;
+use std::sync::Arc;
 
 /// The primary interface for talking to the host itself.
 pub trait Host {
@@ -17,11 +17,7 @@ pub trait Host {
     /// was implemented for a different version of libecap.
     ///
     /// XXX: Investigate and document why this takes a weak_ptr.
-    fn note_versioned_service(
-        &mut self,
-        ecap_version: &CStr,
-        service: /*&WeakPtr<Service>*/&(),
-    );
+    fn note_versioned_service(&mut self, ecap_version: &CStr, service: &());
 
     /// Open a logging stream with the given verbosity.
     ///

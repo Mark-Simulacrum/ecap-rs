@@ -1,12 +1,12 @@
 use ecap::adapter::Service;
-use std::{mem, fmt::Write};
-use libc::{timeval, c_char, c_void};
-use std::time::Duration;
-use std::ffi::CStr;
 use ffi;
+use libc::{c_char, c_void, timeval};
+use std::ffi::CStr;
+use std::time::Duration;
+use std::{fmt::Write, mem};
 
-use common::options::CppOptions;
 use common::log::Ostream;
+use common::options::CppOptions;
 
 pub type ServicePtr = *mut *mut c_void;
 
@@ -86,7 +86,10 @@ pub unsafe extern "C" fn rust_service_configure(service: ServicePtr, options: *c
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn rust_service_reconfigure(service: ServicePtr, options: *const ffi::Options) {
+pub unsafe extern "C" fn rust_service_reconfigure(
+    service: ServicePtr,
+    options: *const ffi::Options,
+) {
     assert!(!options.is_null());
     to_service(&service).reconfigure(CppOptions::from_ptr(options))
 }

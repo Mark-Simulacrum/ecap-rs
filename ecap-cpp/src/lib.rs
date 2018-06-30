@@ -1,6 +1,6 @@
 extern crate ecap;
-extern crate ecap_sys as ffi;
 extern crate ecap_common_link;
+extern crate ecap_sys as ffi;
 extern crate libc;
 
 macro_rules! foreign_ref {
@@ -33,9 +33,9 @@ macro_rules! foreign_ref {
     };
 }
 
-pub mod host;
-pub mod common;
 pub mod adapter;
+pub mod common;
+pub mod host;
 
 use ecap::adapter::Service;
 use libc::c_void;

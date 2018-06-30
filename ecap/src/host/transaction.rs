@@ -1,5 +1,5 @@
+use common::{Area, Delay, Message};
 use std::sync::Arc;
-use common::{Area, Message, Delay};
 
 /// The host side of the eCAP transaction.
 ///

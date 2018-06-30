@@ -2,12 +2,13 @@
 extern crate lazy_static;
 extern crate ecap;
 
-use ecap::Translator;
 use ecap::adapter::Service;
+use ecap::Translator;
 use std::sync::Mutex;
 
 lazy_static! {
-    pub static ref REGISTERED_ADAPTERS: Mutex<Vec<Box<dyn Service + Send + Sync>>> = Mutex::new(Vec::new());
+    pub static ref REGISTERED_ADAPTERS: Mutex<Vec<Box<dyn Service + Send + Sync>>> =
+        Mutex::new(Vec::new());
     pub static ref REGISTERED_TRANSLATORS: Mutex<Vec<Box<dyn Translator>>> = Mutex::new(Vec::new());
 }
 

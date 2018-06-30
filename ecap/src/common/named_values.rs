@@ -1,4 +1,4 @@
-use common::{Name, Area};
+use common::{Area, Name};
 
 pub trait NamedValueVisitor {
     fn visit(&mut self, name: &Name, value: &Area);

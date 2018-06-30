@@ -1,7 +1,7 @@
-use std::rc::Rc;
 use std::marker::PhantomData;
-use std::ptr::{self, NonNull};
 use std::mem;
+use std::ptr::{self, NonNull};
+use std::rc::Rc;
 
 /// This is a continous and fixed-size buffer, that can be copied
 /// without copying the underlying buffer.
@@ -23,7 +23,10 @@ pub struct Area {
 
 impl Area {
     pub fn new<T: DetailsConstructor>(value: T) -> Area {
-        Area { ptr: value.details(), _data: PhantomData }
+        Area {
+            ptr: value.details(),
+            _data: PhantomData,
+        }
     }
 
     /// Create an Area by copying a byte slice.
@@ -40,7 +43,10 @@ impl Area {
 impl Clone for Area {
     fn clone(&self) -> Area {
         self.ptr.increment();
-        Area { ptr: self.ptr, _data: PhantomData }
+        Area {
+            ptr: self.ptr,
+            _data: PhantomData,
+        }
     }
 }
 
@@ -103,16 +109,16 @@ impl<T: ?Sized + AsRef<[u8]>> Details for RcPtr<T> {
     }
 
     fn as_bytes(&self) -> &[u8] {
-        unsafe {
-            <T as AsRef<[u8]>>::as_ref(self.rc.as_ref())
-        }
+        unsafe { <T as AsRef<[u8]>>::as_ref(self.rc.as_ref()) }
     }
 }
 
 impl<T: AsRef<[u8]> + ?Sized + 'static> DetailsConstructor for Rc<T> {
     fn details(self) -> DetailsStack {
         let ptr = Rc::into_raw(self);
-        DetailsStack::from(RcPtr { rc: NonNull::new(ptr as *mut T).unwrap() })
+        DetailsStack::from(RcPtr {
+            rc: NonNull::new(ptr as *mut T).unwrap(),
+        })
     }
 }
 
@@ -141,15 +147,9 @@ impl DetailsStack {
         mem::forget(v);
         DetailsStack {
             value: data,
-            increment: |ptr| unsafe {
-                (&*(ptr as *const T)).increment()
-            },
-            decrement: |ptr| unsafe {
-                (&*(ptr as *const T)).decrement()
-            },
-            as_bytes: |ptr| unsafe {
-                (&*(ptr as *const T)).as_bytes()
-            },
+            increment: |ptr| unsafe { (&*(ptr as *const T)).increment() },
+            decrement: |ptr| unsafe { (&*(ptr as *const T)).decrement() },
+            as_bytes: |ptr| unsafe { (&*(ptr as *const T)).as_bytes() },
         }
     }
 }

@@ -1,4 +1,4 @@
-use common::{Name, Area, NamedValueVisitor};
+use common::{Area, Name, NamedValueVisitor};
 
 /// Reading of `(Name, Area)` pairs across the adapter/host boundary.
 ///

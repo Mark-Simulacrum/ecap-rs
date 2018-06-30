@@ -3,8 +3,8 @@ use std::time::Duration;
 
 use AllocatedTransaction;
 
-use host;
 use common::Options;
+use host;
 
 /// This trait is the equivalent of libecap::adapter::Service.
 pub trait Service {
@@ -76,10 +76,8 @@ pub trait Service {
     fn wants_url(&self, url: &CStr) -> bool;
 
     /// Create a transaction to give to the Host.
-    fn make_transaction<'a>(
-        &mut self,
-        host: &'a mut host::Transaction,
-    ) -> AllocatedTransaction<'a>;
+    fn make_transaction<'a>(&mut self, host: &'a mut host::Transaction)
+        -> AllocatedTransaction<'a>;
 
     // FIXME: libecap API also exposes a shared_ptr to self in public
     // API

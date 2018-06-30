@@ -2,8 +2,8 @@
 
 extern crate libc;
 
-use std::{mem, ptr};
 use std::marker::PhantomData;
+use std::{mem, ptr};
 
 use libc::{c_char, c_int, c_void, size_t};
 

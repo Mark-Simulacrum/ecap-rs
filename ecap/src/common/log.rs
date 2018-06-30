@@ -57,5 +57,4 @@ impl LogVerbosity {
     }
 }
 
-pub trait DebugStream: fmt::Write { }
-
+pub trait DebugStream: fmt::Write {}

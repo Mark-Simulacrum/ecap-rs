@@ -1,10 +1,10 @@
-use std::fmt;
-use std::ptr::NonNull;
+use ecap::common::log::{self, LogVerbosity};
 use ffi;
 use libc::c_char;
-use ecap::common::log::{self, LogVerbosity};
+use std::fmt;
+use std::ptr::NonNull;
 
-impl log::DebugStream for DebugStream { }
+impl log::DebugStream for DebugStream {}
 
 pub struct DebugStream(Option<NonNull<Ostream>>);
 
@@ -49,7 +49,11 @@ foreign_ref!(pub struct Ostream(ffi::Ostream));
 impl fmt::Write for Ostream {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         unsafe {
-            ffi::rust_shim_ostream_write(self as *mut _ as *mut ffi::Ostream, s.as_ptr() as *const c_char, s.len());
+            ffi::rust_shim_ostream_write(
+                self as *mut _ as *mut ffi::Ostream,
+                s.as_ptr() as *const c_char,
+                s.len(),
+            );
         }
         Ok(())
     }

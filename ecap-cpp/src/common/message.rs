@@ -1,9 +1,9 @@
-use std::sync::Arc;
 use ffi;
+use std::sync::Arc;
 
+use ecap::common::header::{FirstLine, Header};
 use ecap::common::Body;
 use ecap::common::Message;
-use ecap::common::header::{Header, FirstLine};
 
 // XXX: this is the wrong type?
 pub type SharedPtrMessage = Arc<dyn Message>;

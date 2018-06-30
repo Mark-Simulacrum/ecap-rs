@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
+use common::header::{FirstLine, Header};
 use common::Body;
-use common::header::{Header, FirstLine};
 
 pub trait Message {
     // FIXME: Return type here is too limiting?

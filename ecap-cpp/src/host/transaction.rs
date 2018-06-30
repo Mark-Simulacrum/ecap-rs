@@ -1,32 +1,26 @@
-use ffi;
-use std::{slice, mem};
-use libc::{c_char, size_t, c_void};
 use ecap::host;
+use ffi;
+use libc::{c_char, c_void, size_t};
+use std::{mem, slice};
 
-use ecap::common::{Area, Message, Delay};
 use ecap::adapter;
+use ecap::common::{Area, Delay, Message};
 
-use common::message::{SharedPtrMessage, CppMessage};
+use common::message::{CppMessage, SharedPtrMessage};
 
-use adapter::service::{ServicePtr, to_service_mut};
+use adapter::service::{to_service_mut, ServicePtr};
 
 foreign_ref!(pub struct Transaction(ffi::HostTransaction));
 
 impl host::Transaction for Transaction {
     fn virgin(&mut self) -> &mut dyn Message {
-        unsafe {
-            CppMessage::from_ptr_mut(ffi::rust_shim_host_xaction_virgin(self.as_ptr_mut()))
-        }
+        unsafe { CppMessage::from_ptr_mut(ffi::rust_shim_host_xaction_virgin(self.as_ptr_mut())) }
     }
     fn cause(&mut self) -> &dyn Message {
-        unsafe {
-            CppMessage::from_ptr(ffi::rust_shim_host_xaction_cause(self.as_ptr_mut()))
-        }
+        unsafe { CppMessage::from_ptr(ffi::rust_shim_host_xaction_cause(self.as_ptr_mut())) }
     }
     fn adapted(&mut self) -> &mut dyn Message {
-        unsafe {
-            CppMessage::from_ptr_mut(ffi::rust_shim_host_xaction_adapted(self.as_ptr_mut()))
-        }
+        unsafe { CppMessage::from_ptr_mut(ffi::rust_shim_host_xaction_adapted(self.as_ptr_mut())) }
     }
     fn use_virgin(&mut self) {
         unsafe {
@@ -103,11 +97,7 @@ impl host::Transaction for Transaction {
 
     fn virgin_body_content(&mut self, offset: usize, size: usize) -> Area {
         unsafe {
-            let area = ffi::rust_shim_host_xaction_vb_content(
-                self.as_ptr_mut(),
-                offset,
-                size,
-            );
+            let area = ffi::rust_shim_host_xaction_vb_content(self.as_ptr_mut(), offset, size);
             // FIXME: avoid the copy, and leak
             Area::from_bytes(slice::from_raw_parts(area.buf as *const u8, area.size))
         }
@@ -138,7 +128,7 @@ unsafe fn to_transaction<'a>(transaction: &'a TransactionPtr) -> &'a dyn adapter
 
 unsafe fn to_transaction_mut<'a>(
     transaction: &'a mut TransactionPtr,
-    ) -> &'a mut dyn adapter::Transaction {
+) -> &'a mut dyn adapter::Transaction {
     assert!(!transaction.is_null());
     let transaction: *mut *mut dyn adapter::Transaction = mem::transmute(*transaction);
     let transaction = *(transaction as *mut *mut dyn adapter::Transaction);
@@ -173,7 +163,7 @@ pub unsafe extern "C" fn rust_xaction_ab_content(
     mut data: TransactionPtr,
     offset: size_t,
     size: size_t,
-    ) -> ffi::Area {
+) -> ffi::Area {
     let area = to_transaction_mut(&mut data).adapted_body_content(offset, size);
     let bytes = area.as_bytes();
     // FIXME: Avoid the copy
@@ -194,7 +184,7 @@ pub unsafe extern "C" fn rust_xaction_vb_content_done(mut data: TransactionPtr, 
 pub unsafe extern "C" fn rust_xaction_create(
     mut service: ServicePtr,
     host: *mut Transaction,
-    ) -> TransactionPtr {
+) -> TransactionPtr {
     let service = to_service_mut(&mut service);
     let transaction = service.make_transaction(&mut *host); // FIXME cannot provide mut direct
     let ptr = Box::into_raw(transaction.0);
@@ -206,7 +196,7 @@ pub unsafe extern "C" fn rust_xaction_create(
 pub unsafe extern "C" fn rust_xaction_free(transaction: TransactionPtr) {
     assert!(!transaction.is_null());
     let ptr: Box<*mut dyn adapter::Transaction> =
-    Box::from_raw(transaction as *mut *mut dyn adapter::Transaction);
+        Box::from_raw(transaction as *mut *mut dyn adapter::Transaction);
     let tr: Box<dyn adapter::Transaction> = Box::from_raw(*ptr);
     mem::drop(tr);
 }

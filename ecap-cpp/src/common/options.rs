@@ -1,7 +1,7 @@
 use ffi;
-use libc::{size_t, c_char, c_void};
+use libc::{c_char, c_void, size_t};
 
-use ecap::common::{Area, Options, Name, NamedValueVisitor};
+use ecap::common::{Area, Name, NamedValueVisitor, Options};
 
 foreign_ref!(pub struct CppOptions(ffi::Options));
 
@@ -15,7 +15,8 @@ impl Options for CppOptions {
                 name_s.len(),
             );
             Some(Area::from_bytes(::std::slice::from_raw_parts(
-                    area.buf as *mut u8 as *const u8, area.size
+                area.buf as *mut u8 as *const u8,
+                area.size,
             )))
         }
     }

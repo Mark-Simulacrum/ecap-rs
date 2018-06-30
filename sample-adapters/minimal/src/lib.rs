@@ -3,9 +3,9 @@ extern crate ecap_common_link;
 
 use std::ffi::CStr;
 
-use ecap::host;
-use ecap::common::{Name, NamedValueVisitor, Area, Options};
 use ecap::adapter::{Service, Transaction};
+use ecap::common::{Area, Name, NamedValueVisitor, Options};
+use ecap::host;
 
 #[derive(Debug)]
 pub struct MinimalService;
@@ -52,7 +52,10 @@ impl Service for MinimalService {
         true
     }
 
-    fn make_transaction<'a>(&mut self, transaction: &'a mut dyn host::Transaction) -> ecap::AllocatedTransaction<'a> {
+    fn make_transaction<'a>(
+        &mut self,
+        transaction: &'a mut dyn host::Transaction,
+    ) -> ecap::AllocatedTransaction<'a> {
         ecap::AllocatedTransaction::new(MinimalTransaction { hostx: transaction })
     }
 }

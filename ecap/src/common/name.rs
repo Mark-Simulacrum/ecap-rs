@@ -1,6 +1,6 @@
-use std::sync::atomic::{Ordering, AtomicUsize};
-use std::cell::Cell;
 use std::borrow::Cow;
+use std::cell::Cell;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 static LAST_ID: AtomicUsize = AtomicUsize::new(0);
 
@@ -27,11 +27,10 @@ pub struct Name {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Id {
-    Unknown, // 0
+    Unknown,      // 0
     Unidentified, // 1
     Id(u32),
 }
-
 
 impl Name {
     pub fn unknown() -> Name {
@@ -118,8 +117,7 @@ impl Name {
 
 impl PartialEq for Name {
     fn eq(&self, other: &Self) -> bool {
-        self.known() &&
-        if self.identified() {
+        self.known() && if self.identified() {
             self.id == other.id
         } else {
             self.image == other.image

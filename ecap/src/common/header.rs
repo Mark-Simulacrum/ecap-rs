@@ -1,4 +1,4 @@
-use common::{Name, Area, NamedValueVisitor};
+use common::{Area, Name, NamedValueVisitor};
 
 use common::Version;
 

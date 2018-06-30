@@ -30,5 +30,3 @@ pub use self::version::Version;
 mod error;
 pub use self::error::TextError;
 */
-
-
