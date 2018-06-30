@@ -3,14 +3,16 @@ use ecap::host::Host;
 
 use common::log::DebugStream;
 use common::message::CppMessage;
-use host::transaction::CppTransaction;
+use host::transaction::{CppTransaction, CppTransactionRef};
 
 pub struct CppHost;
 
 impl Host for CppHost {
     type Message = CppMessage;
+    type MessageRef = CppMessage;
     type DebugStream = DebugStream;
     type Transaction = CppTransaction;
+    type TransactionRef = CppTransactionRef;
 
     fn uri(&self) -> String {
         unimplemented!()

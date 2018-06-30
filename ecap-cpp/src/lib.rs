@@ -1,3 +1,4 @@
+#![allow(unused)]
 extern crate ecap;
 extern crate ecap_common_link;
 extern crate ecap_sys as ffi;

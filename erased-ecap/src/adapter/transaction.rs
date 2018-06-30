@@ -1,109 +1,162 @@
 use ecap;
 use ecap::common::{Area, Name, NamedValueVisitor};
+use ecap::host::Host as ConcreteHost;
 
 use common;
+use host::Host as ErasedHost;
+use host::Transaction as ErasedTransaction;
 
 pub trait Transaction: common::Options {
-    fn start(&mut self);
-    fn stop(&mut self);
-    fn resume(&mut self);
-    fn adapted_body_discard(&mut self);
-    fn adapted_body_make(&mut self);
-    fn adapted_body_make_more(&mut self);
-    fn adapted_body_stop_making(&mut self);
-    fn adapted_body_pause(&mut self);
-    fn adapted_body_resume(&mut self);
-    fn adapted_body_content(&mut self, offset: usize, size: usize) -> Area;
-    fn adapted_body_content_shift(&mut self, size: usize);
-    fn virgin_body_content_done(&mut self, at_end: bool);
-    fn virgin_body_content_available(&mut self);
+    fn start<'a>(&mut self, host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static));
+    fn stop<'a>(&mut self, host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static));
+    fn resume<'a>(&mut self, host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static));
+    fn adapted_body_discard<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+    );
+    fn adapted_body_make<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+    );
+    fn adapted_body_make_more<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+    );
+    fn adapted_body_stop_making<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+    );
+    fn adapted_body_pause<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+    );
+    fn adapted_body_resume<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+    );
+    fn adapted_body_content<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+        offset: usize,
+        size: usize,
+    ) -> Area;
+    fn adapted_body_content_shift<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+        size: usize,
+    );
+    fn virgin_body_content_done<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+        at_end: bool,
+    );
+    fn virgin_body_content_available<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+    );
+}
+
+macro_rules! generate_method_transaction {
+    ($name:ident) => {
+        fn $name<'a>(&mut self, h: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static)) {
+            U::$name(self, h)
+        }
+    }
 }
 
 impl<U> Transaction for U
 where
-    U: ecap::adapter::Transaction + ?Sized,
+    U: ecap::adapter::Transaction<dyn ErasedHost> + ?Sized,
 {
-    fn start(&mut self) {
-        U::start(self)
+    generate_method_transaction!(start);
+    generate_method_transaction!(stop);
+    generate_method_transaction!(resume);
+    generate_method_transaction!(adapted_body_discard);
+    generate_method_transaction!(adapted_body_make);
+    generate_method_transaction!(adapted_body_make_more);
+    generate_method_transaction!(adapted_body_stop_making);
+    generate_method_transaction!(adapted_body_pause);
+    generate_method_transaction!(adapted_body_resume);
+
+    fn adapted_body_content<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+        offset: usize,
+        size: usize,
+    ) -> Area {
+        U::adapted_body_content(self, host, offset, size)
     }
-    fn stop(&mut self) {
-        U::stop(self)
+    fn adapted_body_content_shift<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+        size: usize,
+    ) {
+        U::adapted_body_content_shift(self, host, size)
     }
-    fn resume(&mut self) {
-        U::resume(self)
+    fn virgin_body_content_done<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+        at_end: bool,
+    ) {
+        U::virgin_body_content_done(self, host, at_end)
     }
-    fn adapted_body_discard(&mut self) {
-        U::adapted_body_discard(self)
-    }
-    fn adapted_body_make(&mut self) {
-        U::adapted_body_make(self)
-    }
-    fn adapted_body_make_more(&mut self) {
-        U::adapted_body_make_more(self)
-    }
-    fn adapted_body_stop_making(&mut self) {
-        U::adapted_body_stop_making(self)
-    }
-    fn adapted_body_pause(&mut self) {
-        U::adapted_body_pause(self)
-    }
-    fn adapted_body_resume(&mut self) {
-        U::adapted_body_resume(self)
-    }
-    fn adapted_body_content(&mut self, offset: usize, size: usize) -> Area {
-        U::adapted_body_content(self, offset, size)
-    }
-    fn adapted_body_content_shift(&mut self, size: usize) {
-        U::adapted_body_content_shift(self, size)
-    }
-    fn virgin_body_content_done(&mut self, at_end: bool) {
-        U::virgin_body_content_done(self, at_end)
-    }
-    fn virgin_body_content_available(&mut self) {
-        U::virgin_body_content_available(self)
+
+    generate_method_transaction!(virgin_body_content_available);
+}
+
+macro_rules! generate_method_transaction_1 {
+    ($name:ident) => {
+        fn $name<'a>(&mut self, host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static))
+        where
+            (dyn ErasedTransaction<dyn ErasedHost> + 'static): 'a,
+        {
+            Self::$name(self, host)
+        }
     }
 }
 
-impl ecap::adapter::Transaction for dyn Transaction {
-    fn start(&mut self) {
-        Self::start(self)
+impl ecap::adapter::Transaction<dyn ErasedHost> for dyn Transaction {
+    generate_method_transaction_1!(start);
+    generate_method_transaction_1!(stop);
+    generate_method_transaction_1!(resume);
+    generate_method_transaction_1!(adapted_body_discard);
+    generate_method_transaction_1!(adapted_body_make);
+    generate_method_transaction_1!(adapted_body_make_more);
+    generate_method_transaction_1!(adapted_body_stop_making);
+    generate_method_transaction_1!(adapted_body_pause);
+    generate_method_transaction_1!(adapted_body_resume);
+
+    fn adapted_body_content<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+        offset: usize,
+        size: usize,
+    ) -> Area
+    where
+        (dyn ErasedTransaction<dyn ErasedHost> + 'static): 'a,
+    {
+        Self::adapted_body_content(self, host, offset, size)
     }
-    fn stop(&mut self) {
-        Self::stop(self)
+    fn adapted_body_content_shift<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+        size: usize,
+    ) where
+        (dyn ErasedTransaction<dyn ErasedHost> + 'static): 'a,
+    {
+        Self::adapted_body_content_shift(self, host, size)
     }
-    fn resume(&mut self) {
-        Self::resume(self)
+    fn virgin_body_content_done<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+        at_end: bool,
+    ) where
+        (dyn ErasedTransaction<dyn ErasedHost> + 'static): 'a,
+    {
+        Self::virgin_body_content_done(self, host, at_end)
     }
-    fn adapted_body_discard(&mut self) {
-        Self::adapted_body_discard(self)
-    }
-    fn adapted_body_make(&mut self) {
-        Self::adapted_body_make(self)
-    }
-    fn adapted_body_make_more(&mut self) {
-        Self::adapted_body_make_more(self)
-    }
-    fn adapted_body_stop_making(&mut self) {
-        Self::adapted_body_stop_making(self)
-    }
-    fn adapted_body_pause(&mut self) {
-        Self::adapted_body_pause(self)
-    }
-    fn adapted_body_resume(&mut self) {
-        Self::adapted_body_resume(self)
-    }
-    fn adapted_body_content(&mut self, offset: usize, size: usize) -> Area {
-        Self::adapted_body_content(self, offset, size)
-    }
-    fn adapted_body_content_shift(&mut self, size: usize) {
-        Self::adapted_body_content_shift(self, size)
-    }
-    fn virgin_body_content_done(&mut self, at_end: bool) {
-        Self::virgin_body_content_done(self, at_end)
-    }
-    fn virgin_body_content_available(&mut self) {
-        Self::virgin_body_content_available(self)
-    }
+
+    generate_method_transaction_1!(virgin_body_content_available);
 }
 
 impl<'a> ecap::common::Options for dyn Transaction + 'a {

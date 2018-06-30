@@ -9,7 +9,9 @@ use host::Transaction;
 pub trait Host {
     type DebugStream: DebugStream;
     type Message: Message;
+    type MessageRef: Message + ?Sized;
     type Transaction: Transaction<Self>;
+    type TransactionRef: Transaction<Self> + ?Sized;
 
     /// A unique identifer across all vendors.
     fn uri(&self) -> String;

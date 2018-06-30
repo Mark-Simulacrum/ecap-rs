@@ -146,20 +146,20 @@ extern "C" {
     void rust_service_reconfigure(const void **, const libecap::Options *);
     bool rust_service_wants_url(const void **, const char *);
 
-    void rust_xaction_start(const void *);
-    void rust_xaction_stop(const void *);
-    void rust_xaction_resume(const void *);
-    void rust_xaction_ab_discard(const void *);
-    void rust_xaction_ab_make(const void *);
-    void rust_xaction_ab_make_more(const void *);
-    void rust_xaction_ab_stop_making(const void *);
-    void rust_xaction_ab_pause(const void *);
-    void rust_xaction_ab_resume(const void *);
-    rust_area rust_xaction_ab_content(const void *, size_t, size_t);
-    void rust_xaction_ab_content_shift(const void *, size_t);
+    void rust_xaction_start(const void *, void *);
+    void rust_xaction_stop(const void *, void *);
+    void rust_xaction_resume(const void *, void *);
+    void rust_xaction_ab_discard(const void *, void *);
+    void rust_xaction_ab_make(const void *, void *);
+    void rust_xaction_ab_make_more(const void *, void *);
+    void rust_xaction_ab_stop_making(const void *, void *);
+    void rust_xaction_ab_pause(const void *, void *);
+    void rust_xaction_ab_resume(const void *, void *);
+    rust_area rust_xaction_ab_content(const void *, void *, size_t, size_t);
+    void rust_xaction_ab_content_shift(const void *, void *, size_t);
 
-    void rust_xaction_vb_content_done(const void *, bool);
-    void rust_xaction_vb_content_available(const void *);
+    void rust_xaction_vb_content_done(const void *, void *, bool);
+    void rust_xaction_vb_content_available(const void *, void *);
 
     void rust_service_free(const void **);
     const void *rust_xaction_create(const void **, void *);
@@ -284,6 +284,7 @@ class Xaction: public libecap::adapter::Xaction {
 		virtual void noteVbContentAvailable();
 
 	private:
+	        libecap::host::Xaction *hostx;
 		const void *rust_xaction;
 };
 
@@ -385,6 +386,7 @@ Adapter::Service::makeXaction(libecap::host::Xaction *hostx) {
 
 
 Adapter::Xaction::Xaction(Adapter::Service *service, libecap::host::Xaction *x) {
+    hostx = x;
     rust_xaction = rust_xaction_create(service->rust_service, x);
 }
 
@@ -402,7 +404,7 @@ void Adapter::Xaction::visitEachOption(libecap::NamedValueVisitor &) const {
 }
 
 libecap::Area Adapter::Xaction::abContent(libecap::size_type offset, libecap::size_type size) {
-    rust_area rarea = ::rust_xaction_ab_content(rust_xaction, offset, size);
+    rust_area rarea = ::rust_xaction_ab_content(rust_xaction, hostx, offset, size);
     libecap::Area area;
     area.start = rarea.buf;
     area.size = rarea.size;
@@ -413,16 +415,16 @@ libecap::Area Adapter::Xaction::abContent(libecap::size_type offset, libecap::si
 }
 
 void Adapter::Xaction::abContentShift(libecap::size_type size) {
-    ::rust_xaction_ab_content_shift(rust_xaction, size);
+    ::rust_xaction_ab_content_shift(rust_xaction, hostx, size);
 }
 
 void Adapter::Xaction::noteVbContentDone(bool atEnd) {
-    ::rust_xaction_vb_content_done(rust_xaction, atEnd);
+    ::rust_xaction_vb_content_done(rust_xaction, hostx, atEnd);
 }
 
 #define XACTION_METHOD_SHIM(rname__, cpp_name__) \
     void Adapter::Xaction::cpp_name__() { \
-        ::rname__(rust_xaction); \
+        ::rname__(rust_xaction, hostx); \
     }
 
 XACTION_METHOD_SHIM(rust_xaction_start, start);

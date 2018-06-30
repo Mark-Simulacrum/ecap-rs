@@ -3,6 +3,8 @@
 extern crate ecap;
 #[macro_use]
 extern crate mopa;
+#[macro_use]
+extern crate parse_generics_shim;
 
 pub mod adapter;
 pub mod common;

@@ -10,6 +10,9 @@ use adapter;
 use common;
 use host;
 
+use host::Host as ErasedHost;
+use host::Transaction as ErasedTransaction;
+
 pub struct ErasedService {
     service: *mut dyn Service<Box<dyn host::Host>>, // lies
     host: TypeId,
@@ -53,26 +56,33 @@ pub trait Service<H: 'static + host::Host + ?Sized> {
     fn stop(&self);
     fn retire(&self);
     fn wants_url(&self, url: &CStr) -> bool;
-    fn make_transaction(
+    fn make_transaction<'a>(
         &mut self,
-        host: &mut dyn ecap::host::Transaction<H>,
+        host: &'a mut (dyn ErasedTransaction<H> + 'static),
     ) -> Box<dyn adapter::Transaction>;
     fn is_async(&self) -> bool;
     fn suspend(&self, _timeout: &mut Duration);
     fn resume(&self);
 }
 
-impl<H, S> Service<H> for S
+impl<S> Service<dyn ErasedHost> for S
 where
-    H: ecap::host::Host + 'static + ?Sized,
-    H::DebugStream: 'static,
-    H::Message: 'static,
-    S: ecap::adapter::Service<H> + ?Sized,
+    S: ecap::adapter::Service<dyn ErasedHost> + ?Sized,
+    <S as ecap::adapter::Service<dyn ErasedHost>>::Transaction: 'static,
 {
     fn make_transaction(
         &mut self,
-        host: &mut dyn ecap::host::Transaction<H>,
+        host: &mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
     ) -> Box<dyn adapter::Transaction> {
+        //let host = host.downcast_mut::<dyn ErasedTransaction<dyn ErasedHost>>()
+        //    .unwrap_or_else(|| unsafe {
+        //        panic!(
+        //            "wrong transaction passed to Service::make_transaction, Self: {}, H: {}, t: {}",
+        //            ::std::intrinsics::type_name::<Self>(),
+        //            "", //::std::intrinsics::type_name::<H>(),
+        //            "", //::std::intrinsics::type_name::<H::Transaction>()
+        //        );
+        //    });
         Box::new(S::make_transaction(self, host))
     }
 
@@ -125,12 +135,7 @@ where
     }
 }
 
-impl<H> ecap::adapter::Service<H> for dyn Service<H>
-where
-    H: ?Sized + ecap::host::Host + 'static,
-    H::DebugStream: 'static,
-    H::Message: 'static,
-{
+impl ecap::adapter::Service<dyn ErasedHost> for dyn Service<dyn ErasedHost> {
     type Transaction = Box<dyn adapter::Transaction>;
     fn uri(&self) -> String {
         Self::uri(self)
@@ -159,7 +164,10 @@ where
     fn wants_url(&self, url: &CStr) -> bool {
         Self::wants_url(self, url)
     }
-    fn make_transaction(&mut self, host: &mut H::Transaction) -> Box<dyn adapter::Transaction> {
+    fn make_transaction<'a>(
+        &mut self,
+        host: &'a mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
+    ) -> Box<dyn adapter::Transaction> {
         Self::make_transaction(self, host)
     }
     fn is_async(&self) -> bool {

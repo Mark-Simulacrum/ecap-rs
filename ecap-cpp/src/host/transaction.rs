@@ -1,4 +1,3 @@
-use ecap::host;
 use ffi;
 use libc::{c_char, c_void, size_t};
 use std::{mem, slice};
@@ -8,14 +7,21 @@ use ecap::common::{Area, Delay};
 use common::message::CppMessage;
 use host::CppHost;
 
-//use common::message::{CppMessage, SharedPtrMessage};
-
 use adapter::service::{to_service_mut, ServicePtr};
+use erased_ecap::adapter::Transaction as ErasedAdapterTransaction;
+use erased_ecap::common::Message as ErasedMessage;
+use erased_ecap::host::Host as ErasedHost;
+use erased_ecap::host::Transaction as ErasedTransaction;
+
+//use ecap::host::Host as ConcreteHost;
+use ecap::host::Transaction as ConcreteTransaction;
 
 //foreign_ref!(pub struct Transaction(ffi::HostTransaction));
 pub struct CppTransaction {
     hostx: *mut ffi::HostTransaction,
 }
+
+pub type CppTransactionRef = CppTransaction;
 
 impl CppTransaction {
     fn from_ptr_mut(ptr: *mut ffi::HostTransaction) -> Self {
@@ -27,7 +33,79 @@ impl CppTransaction {
     }
 }
 
-impl host::Transaction<CppHost> for CppTransaction {
+impl ErasedTransaction<dyn ErasedHost> for CppTransaction {
+    fn virgin(&mut self) -> &mut dyn ErasedMessage {
+        unimplemented!()
+    }
+    fn cause(&mut self) -> &dyn ErasedMessage {
+        unimplemented!()
+    }
+    fn adapted(&mut self) -> &mut dyn ErasedMessage {
+        unimplemented!()
+    }
+    fn use_virgin(&mut self) {
+        <CppTransaction as ConcreteTransaction<CppHost>>::use_virgin(self)
+    }
+    fn use_adapted(&mut self, _msg: Box<dyn ErasedMessage>) {
+        unimplemented!()
+    }
+    fn block_virgin(&mut self) {
+        unimplemented!()
+    }
+    fn adaptation_delayed(&mut self, _delay: &Delay) {
+        unimplemented!()
+    }
+
+    fn adaptation_aborted(&mut self) {
+        unimplemented!()
+    }
+
+    fn resume(&mut self) {
+        unimplemented!()
+    }
+
+    fn virgin_body_discard(&mut self) {
+        unimplemented!()
+    }
+
+    fn virgin_body_make(&mut self) {
+        unimplemented!()
+    }
+
+    fn virgin_body_make_more(&mut self) {
+        unimplemented!()
+    }
+
+    fn virgin_body_stop_making(&mut self) {
+        unimplemented!()
+    }
+
+    fn virgin_body_pause(&mut self) {
+        unimplemented!()
+    }
+
+    fn virgin_body_resume(&mut self) {
+        unimplemented!()
+    }
+
+    fn virgin_body_content(&mut self, _offset: usize, _size: usize) -> Area {
+        unimplemented!()
+    }
+
+    fn virgin_body_content_shift(&mut self, _size: usize) {
+        unimplemented!()
+    }
+
+    fn adapted_body_content_done(&mut self, _at_end: bool) {
+        unimplemented!()
+    }
+
+    fn adapted_body_content_available(&mut self) {
+        unimplemented!()
+    }
+}
+
+impl ConcreteTransaction<CppHost> for CppTransaction {
     fn virgin(&mut self) -> &mut CppMessage {
         unimplemented!()
         //unsafe { CppMessage::from_ptr_mut(ffi::rust_shim_host_xaction_virgin(self.as_ptr_mut())) }
@@ -161,8 +239,9 @@ unsafe fn to_transaction_mut<'a>(
 macro_rules! transaction_mut_method {
     ($c:ident, $method:ident) => {
         #[no_mangle]
-        pub unsafe extern "C" fn $c(mut data: TransactionPtr) {
-            to_transaction_mut(&mut data).$method();
+        pub unsafe extern "C" fn $c(mut data: TransactionPtr, host: *mut ffi::HostTransaction) {
+            let mut host = CppTransactionRef::from_ptr_mut(host);
+            to_transaction_mut(&mut data).$method(&mut host);
         }
     };
 }
@@ -184,23 +263,35 @@ transaction_mut_method!(
 #[no_mangle]
 pub unsafe extern "C" fn rust_xaction_ab_content(
     mut data: TransactionPtr,
+    host: *mut ffi::HostTransaction,
     offset: size_t,
     size: size_t,
 ) -> ffi::Area {
-    let area = to_transaction_mut(&mut data).adapted_body_content(offset, size);
+    let mut host = CppTransactionRef::from_ptr_mut(host);
+    let area = to_transaction_mut(&mut data).adapted_body_content(&mut host, offset, size);
     let bytes = area.as_bytes();
     // FIXME: Avoid the copy
     ffi::rust_area_new_slice(bytes.as_ptr() as *const c_char, bytes.len())
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn rust_xaction_ab_content_shift(mut data: TransactionPtr, size: size_t) {
-    to_transaction_mut(&mut data).adapted_body_content_shift(size);
+pub unsafe extern "C" fn rust_xaction_ab_content_shift(
+    mut data: TransactionPtr,
+    host: *mut ffi::HostTransaction,
+    size: size_t,
+) {
+    let mut host = CppTransactionRef::from_ptr_mut(host);
+    to_transaction_mut(&mut data).adapted_body_content_shift(&mut host, size);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn rust_xaction_vb_content_done(mut data: TransactionPtr, at_end: bool) {
-    to_transaction_mut(&mut data).virgin_body_content_done(at_end);
+pub unsafe extern "C" fn rust_xaction_vb_content_done(
+    mut data: TransactionPtr,
+    host: *mut ffi::HostTransaction,
+    at_end: bool,
+) {
+    let mut host = CppTransactionRef::from_ptr_mut(host);
+    to_transaction_mut(&mut data).virgin_body_content_done(&mut host, at_end);
 }
 
 #[no_mangle]
@@ -208,23 +299,17 @@ pub unsafe extern "C" fn rust_xaction_create(
     mut service: ServicePtr,
     host: *mut ffi::HostTransaction,
 ) -> TransactionPtr {
-    use erased_ecap;
-    let host = CppTransaction::from_ptr_mut(host);
+    let mut host = CppTransaction::from_ptr_mut(host);
     let service = to_service_mut(&mut service);
-    let mut host_: Box<dyn erased_ecap::host::Transaction<CppHost>> = Box::new(host);
-    let transaction = service.make_transaction(&mut host_); // FIXME cannot provide mut direct
+    //let mut host: Box<dyn ErasedTransaction<dyn ErasedHost>> = Box::new(host);
+    let transaction: Box<dyn ErasedAdapterTransaction> = service.make_transaction(&mut host);
+    let transaction_ptr = Box::new(transaction);
 
-    let ptr = Box::into_raw(transaction);
-    let transaction_ptr: Box<*mut dyn erased_ecap::adapter::Transaction> = Box::new(ptr);
-    Box::into_raw(transaction_ptr) as *mut *mut c_void
+    Box::into_raw(transaction_ptr) as TransactionPtr
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn rust_xaction_free(transaction: TransactionPtr) {
-    unimplemented!()
-    //assert!(!transaction.is_null());
-    //let ptr: Box<*mut dyn adapter::Transaction> =
-    //    Box::from_raw(transaction as *mut *mut dyn adapter::Transaction);
-    //let tr: Box<dyn adapter::Transaction> = Box::from_raw(*ptr);
-    //mem::drop(tr);
+    assert!(!transaction.is_null());
+    let _: Box<Box<dyn ErasedAdapterTransaction>> = Box::from_raw(transaction as *mut _);
 }

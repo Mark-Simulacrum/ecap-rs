@@ -8,3 +8,6 @@ members = [
     "ecap-common-link",
     "sample-adapters/*",
 ]
+
+[patch.crates-io]
+mopa = { path = "mopa" }

@@ -15,7 +15,10 @@ mod ffi {
     }
 }
 
-pub fn register_erased_service<T: Service<dyn Host>>(service: T) {
+pub fn register_erased_service<T: Service<dyn Host>>(service: T)
+where
+    <T as Service<dyn Host>>::Transaction: 'static,
+{
     unsafe {
         let service: Box<ErasedService> = Box::new(ErasedService::new(service));
         ffi::register_service(Box::into_raw(service) as *mut u32);

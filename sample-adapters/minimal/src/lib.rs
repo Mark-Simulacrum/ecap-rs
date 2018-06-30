@@ -15,7 +15,7 @@ where
     H: host::Host + ?Sized,
     H::Transaction: 'static,
 {
-    type Transaction = MinimalTransaction<'static, H>;
+    type Transaction = MinimalTransaction;
 
     fn uri(&self) -> String {
         format!("ecap://rust/sample/minimal")
@@ -58,42 +58,91 @@ where
         true
     }
 
-    fn make_transaction(&mut self, _transaction: &mut H::Transaction) -> Self::Transaction {
-        unimplemented!()
-        //MinimalTransaction { hostx: transaction }
+    fn make_transaction(&mut self, _transaction: &mut H::TransactionRef) -> Self::Transaction {
+        MinimalTransaction
         //ecap::AllocatedTransaction::new(MinimalTransaction { hostx: transaction })
     }
 }
 
-pub struct MinimalTransaction<'a, H: host::Host + ?Sized>
-where
-    H::Transaction: 'a,
-{
-    hostx: &'a mut H::Transaction,
-}
+pub struct MinimalTransaction;
 
-impl<'a, H: ?Sized + host::Host> Transaction for MinimalTransaction<'a, H> {
-    fn start(&mut self) {
-        self.hostx.use_virgin();
+impl<H: host::Host + ?Sized> Transaction<H> for MinimalTransaction {
+    fn start<'a>(&mut self, hostx: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a,
+    {
+        hostx.use_virgin();
     }
 
-    fn stop(&mut self) {}
-    fn resume(&mut self) {}
-    fn adapted_body_discard(&mut self) {}
-    fn adapted_body_make(&mut self) {}
-    fn adapted_body_make_more(&mut self) {}
-    fn adapted_body_stop_making(&mut self) {}
-    fn adapted_body_pause(&mut self) {}
-    fn adapted_body_resume(&mut self) {}
-    fn adapted_body_content(&mut self, _offset: usize, _size: usize) -> Area {
+    fn stop<'a>(&mut self, _host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a,
+    {
+    }
+    fn resume<'a>(&mut self, _host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a,
+    {
+    }
+    fn adapted_body_discard<'a>(&mut self, _host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a,
+    {
+    }
+    fn adapted_body_make<'a>(&mut self, _host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a,
+    {
+    }
+    fn adapted_body_make_more<'a>(&mut self, _host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a,
+    {
+    }
+    fn adapted_body_stop_making<'a>(&mut self, _host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a,
+    {
+    }
+    fn adapted_body_pause<'a>(&mut self, _host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a,
+    {
+    }
+    fn adapted_body_resume<'a>(&mut self, _host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a,
+    {
+    }
+    fn adapted_body_content<'a>(
+        &mut self,
+        _host: &'a mut H::TransactionRef,
+        _offset: usize,
+        _size: usize,
+    ) -> Area
+    where
+        H::TransactionRef: 'a,
+    {
         Area::from_bytes(&[])
     }
-    fn adapted_body_content_shift(&mut self, _size: usize) {}
-    fn virgin_body_content_done(&mut self, _at_end: bool) {}
-    fn virgin_body_content_available(&mut self) {}
+    fn adapted_body_content_shift<'a>(&mut self, _host: &'a mut H::TransactionRef, _size: usize)
+    where
+        H::TransactionRef: 'a,
+    {
+    }
+    fn virgin_body_content_done<'a>(&mut self, _host: &'a mut H::TransactionRef, _at_end: bool)
+    where
+        H::TransactionRef: 'a,
+    {
+    }
+    fn virgin_body_content_available<'a>(&mut self, _host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a,
+    {
+    }
 }
 
-impl<'a, H: ?Sized + host::Host> Options for MinimalTransaction<'a, H> {
+impl Options for MinimalTransaction {
     fn option(&self, _name: &Name) -> Option<&Area> {
         // no meta-information to provide
         None

@@ -1,4 +1,5 @@
 use common::{Area, Options};
+use host;
 
 /// Equivalent of libecap/adapter/xaction.h
 ///
@@ -15,7 +16,7 @@ use common::{Area, Options};
 /// meta-information from them.
 ///
 /// XXX: What is the meta information?
-pub trait Transaction: Options {
+pub trait Transaction<H: ?Sized + host::Host>: Options {
     /// Called by the host to initiate processing of the virgin request.
     ///
     /// XXX: Confirm that options methods can't be called prior to
@@ -24,14 +25,18 @@ pub trait Transaction: Options {
     /// This will be called prior to any other methods on Transaction by
     /// the host, after creation in
     /// [`Service::make_transaction`](`::adapter::Service::make_transaction`).
-    fn start(&mut self);
+    fn start<'a>(&mut self, host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a;
 
     /// Processing has finished.
     ///
     /// No further calls to the host transaction should be made. The
     /// host transaction will also call no more methods on this adapter
     /// transaction.
-    fn stop(&mut self);
+    fn stop<'a>(&mut self, host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a;
 
     /// Indicate readiness to provide content or otherwise change
     /// transaction state to the host transaction.
@@ -42,7 +47,9 @@ pub trait Transaction: Options {
     /// This will be called eventually after `Service::resume` calls
     /// `host::Transaction::resume` on the host transaction pair to this
     /// transaction.
-    fn resume(&mut self);
+    fn resume<'a>(&mut self, host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a;
 
     /// Discard the adapted body.
     ///
@@ -57,7 +64,9 @@ pub trait Transaction: Options {
     /// [`adapted_body_make`]: `Transaction::adapted_body_make`
     /// [`host::Transaction::use_adapted`]: `::host::Transaction::use_adapted`
     /// [`host::Transaction::use_virgin`]: `::host::Transaction::use_virgin`
-    fn adapted_body_discard(&mut self);
+    fn adapted_body_discard<'a>(&mut self, host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a;
 
     /// The host is interested in adapted body content.
     ///
@@ -71,7 +80,9 @@ pub trait Transaction: Options {
     /// [`adapted_body_make_more`][].
     ///
     /// [`adapted_body_make_more`]: `Transaction::adapted_body_make_more`
-    fn adapted_body_make(&mut self);
+    fn adapted_body_make<'a>(&mut self, host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a;
 
     /// Make adapted body content.
     ///
@@ -81,7 +92,9 @@ pub trait Transaction: Options {
     /// See also the [`adapted_body_make`][] method.
     ///
     /// [`adapted_body_make`]: `Transaction::adapted_body_make`
-    fn adapted_body_make_more(&mut self);
+    fn adapted_body_make_more<'a>(&mut self, host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a;
 
     /// Stop making adapted body content.
     ///
@@ -98,7 +111,9 @@ pub trait Transaction: Options {
     ///
     /// [`adapted_body_make`]: `Transaction::adapted_body_make`
     /// [`adapted_body_discard`]: `Transaction::adapted_body_discard`
-    fn adapted_body_stop_making(&mut self);
+    fn adapted_body_stop_making<'a>(&mut self, host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a;
 
     /// Pause making adapted body content.
     ///
@@ -109,14 +124,18 @@ pub trait Transaction: Options {
     ///
     /// [`adapted_body_stop_making`]: `Transaction::adapted_body_stop_making`
     /// [`adapted_body_resume`]: `Transaction::adapted_body_resume`
-    fn adapted_body_pause(&mut self);
+    fn adapted_body_pause<'a>(&mut self, host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a;
 
     /// Resume making adapted body content.
     ///
     /// Will only be called after [`adapted_body_pause`][].
     ///
     /// [`adapted_body_pause`]: `Transaction::adapted_body_pause`
-    fn adapted_body_resume(&mut self);
+    fn adapted_body_resume<'a>(&mut self, host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a;
 
     /// Extract a given portion of the adapted body content.
     ///
@@ -131,7 +150,14 @@ pub trait Transaction: Options {
     ///
     /// Adapters can assume that message size will not exceed the
     /// maximum value of an unsigned 64-bit integer.
-    fn adapted_body_content(&mut self, offset: usize, size: usize) -> Area;
+    fn adapted_body_content<'a>(
+        &mut self,
+        host: &'a mut H::TransactionRef,
+        offset: usize,
+        size: usize,
+    ) -> Area
+    where
+        H::TransactionRef: 'a;
 
     /// Shift over start of content buffer.
     ///
@@ -144,7 +170,9 @@ pub trait Transaction: Options {
     /// respect to this shift.
     ///
     /// [`adapted_body_content`]: `Transaction::adapted_body_content`]
-    fn adapted_body_content_shift(&mut self, size: usize);
+    fn adapted_body_content_shift<'a>(&mut self, host: &'a mut H::TransactionRef, size: usize)
+    where
+        H::TransactionRef: 'a;
 
     /// No more virgin body content is expected.
     ///
@@ -155,7 +183,9 @@ pub trait Transaction: Options {
     ///
     /// This method indicates fact, not a hint. No more content can
     /// arrive.
-    fn virgin_body_content_done(&mut self, at_end: bool);
+    fn virgin_body_content_done<'a>(&mut self, host: &'a mut H::TransactionRef, at_end: bool)
+    where
+        H::TransactionRef: 'a;
 
     /// More virgin body content may be available.
     ///
@@ -164,50 +194,60 @@ pub trait Transaction: Options {
     ///
     /// This method may be called and no additional virgin body content
     /// may be returned: it does not represent fact, merely a hint.
-    fn virgin_body_content_available(&mut self);
+    fn virgin_body_content_available<'a>(&mut self, host: &'a mut H::TransactionRef)
+    where
+        H::TransactionRef: 'a;
 }
 
-impl<T> Transaction for Box<T>
+macro_rules! generate_method_transaction {
+    ($name:ident) => {
+        fn $name<'a>(&mut self, host: &'a mut H::TransactionRef)
+        where
+            H::TransactionRef: 'a,
+        {
+            (&mut **self).$name(host)
+        }
+    }
+}
+
+impl<H, T> Transaction<H> for Box<T>
 where
-    T: Options + Transaction + ?Sized,
+    H: ?Sized + host::Host,
+    T: Options + Transaction<H> + ?Sized,
 {
-    fn start(&mut self) {
-        (&mut **self).start()
+    generate_method_transaction!(start);
+    generate_method_transaction!(stop);
+    generate_method_transaction!(resume);
+    generate_method_transaction!(adapted_body_discard);
+    generate_method_transaction!(adapted_body_make);
+    generate_method_transaction!(adapted_body_make_more);
+    generate_method_transaction!(adapted_body_stop_making);
+    generate_method_transaction!(adapted_body_pause);
+    generate_method_transaction!(adapted_body_resume);
+
+    fn adapted_body_content<'a>(
+        &mut self,
+        host: &'a mut H::TransactionRef,
+        offset: usize,
+        size: usize,
+    ) -> Area
+    where
+        H::TransactionRef: 'a,
+    {
+        (&mut **self).adapted_body_content(host, offset, size)
     }
-    fn stop(&mut self) {
-        (&mut **self).stop()
+    fn adapted_body_content_shift<'a>(&mut self, host: &'a mut H::TransactionRef, size: usize)
+    where
+        H::TransactionRef: 'a,
+    {
+        (&mut **self).adapted_body_content_shift(host, size)
     }
-    fn resume(&mut self) {
-        (&mut **self).resume()
+    fn virgin_body_content_done<'a>(&mut self, host: &'a mut H::TransactionRef, at_end: bool)
+    where
+        H::TransactionRef: 'a,
+    {
+        (&mut **self).virgin_body_content_done(host, at_end)
     }
-    fn adapted_body_discard(&mut self) {
-        (&mut **self).adapted_body_discard()
-    }
-    fn adapted_body_make(&mut self) {
-        (&mut **self).adapted_body_make()
-    }
-    fn adapted_body_make_more(&mut self) {
-        (&mut **self).adapted_body_make_more()
-    }
-    fn adapted_body_stop_making(&mut self) {
-        (&mut **self).adapted_body_stop_making()
-    }
-    fn adapted_body_pause(&mut self) {
-        (&mut **self).adapted_body_pause()
-    }
-    fn adapted_body_resume(&mut self) {
-        (&mut **self).adapted_body_resume()
-    }
-    fn adapted_body_content(&mut self, offset: usize, size: usize) -> Area {
-        (&mut **self).adapted_body_content(offset, size)
-    }
-    fn adapted_body_content_shift(&mut self, size: usize) {
-        (&mut **self).adapted_body_content_shift(size)
-    }
-    fn virgin_body_content_done(&mut self, at_end: bool) {
-        (&mut **self).virgin_body_content_done(at_end)
-    }
-    fn virgin_body_content_available(&mut self) {
-        (&mut **self).virgin_body_content_available()
-    }
+
+    generate_method_transaction!(virgin_body_content_available);
 }

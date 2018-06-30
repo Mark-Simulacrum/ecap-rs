@@ -5,7 +5,7 @@ use {adapter, common::Options, host};
 
 /// This trait is the equivalent of libecap::adapter::Service.
 pub trait Service<H: ?Sized + host::Host> {
-    type Transaction: adapter::Transaction;
+    type Transaction: adapter::Transaction<H>;
 
     /// The returned string should be unique across vendors.
     fn uri(&self) -> String;
@@ -76,7 +76,7 @@ pub trait Service<H: ?Sized + host::Host> {
     fn wants_url(&self, url: &CStr) -> bool;
 
     /// Create a transaction to give to the Host.
-    fn make_transaction(&mut self, host: &mut H::Transaction) -> Self::Transaction;
+    fn make_transaction(&mut self, host: &mut H::TransactionRef) -> Self::Transaction;
 
     // FIXME: libecap API also exposes a shared_ptr to self in public
     // API
@@ -116,7 +116,7 @@ where
     fn wants_url(&self, url: &CStr) -> bool {
         (&**self).wants_url(url)
     }
-    fn make_transaction(&mut self, host: &mut H::Transaction) -> Self::Transaction {
+    fn make_transaction(&mut self, host: &mut H::TransactionRef) -> Self::Transaction {
         (&mut **self).make_transaction(host)
     }
 

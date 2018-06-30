@@ -1,16 +1,16 @@
 use common::{Area, Delay};
 use host::Host;
 
-use std::any::TypeId;
+mopafy!(Transaction<H: ?Sized + Host>);
 
 /// The host side of the eCAP transaction.
 ///
 /// adapter::Transaction implementors use this interface to get virgin messages.
-pub trait Transaction<H: ?Sized + Host>: 'static {
+pub trait Transaction<H: ?Sized + Host>: 'static + ::mopa::Any {
     /// Access to the request or the response.
     ///
     /// XXX: Signature will change to &self -> &Message
-    fn virgin(&mut self) -> &mut H::Message;
+    fn virgin(&mut self) -> &mut H::MessageRef;
 
     /// Other side of the request/response pair, as compared to `virgin`.
     ///
@@ -18,7 +18,7 @@ pub trait Transaction<H: ?Sized + Host>: 'static {
     /// a proxy, as there is no cause in that case.
     ///
     /// XXX: Signature will change to &self -> Option<&Message>
-    fn cause(&mut self) -> &H::Message;
+    fn cause(&mut self) -> &H::MessageRef;
 
     /// The message passed to `use_adapted`.
     ///
@@ -29,7 +29,7 @@ pub trait Transaction<H: ?Sized + Host>: 'static {
     /// shared_ptr that is given to `use_adapted`?
     ///
     /// XXX: Signature will change to &self -> Option<&Message>
-    fn adapted(&mut self) -> &mut H::Message;
+    fn adapted(&mut self) -> &mut H::MessageRef;
 
     /// Use the virgin message for response/request.
     ///
@@ -159,20 +159,16 @@ pub trait Transaction<H: ?Sized + Host>: 'static {
     ///
     /// [`adapter::Transaction::virgin_body_content_available`]: `::adapter::Transaction::virgin_body_content_available`
     fn adapted_body_content_available(&mut self);
-
-    fn __get_type_id(&self) -> TypeId {
-        TypeId::of::<Self>()
-    }
 }
 
 impl<H: Host + ?Sized, T: ?Sized + Transaction<H>> Transaction<H> for Box<T> {
-    fn virgin(&mut self) -> &mut H::Message {
+    fn virgin(&mut self) -> &mut H::MessageRef {
         (&mut **self).virgin()
     }
-    fn cause(&mut self) -> &H::Message {
+    fn cause(&mut self) -> &H::MessageRef {
         (&mut **self).cause()
     }
-    fn adapted(&mut self) -> &mut H::Message {
+    fn adapted(&mut self) -> &mut H::MessageRef {
         (&mut **self).adapted()
     }
     fn use_virgin(&mut self) {

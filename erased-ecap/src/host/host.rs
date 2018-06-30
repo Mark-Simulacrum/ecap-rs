@@ -18,8 +18,10 @@ pub trait Host {
 
 impl ecap::host::Host for dyn Host {
     type Message = Box<dyn Message>;
+    type MessageRef = dyn Message;
     type DebugStream = Box<dyn DebugStream>;
     type Transaction = Box<dyn Transaction<dyn Host>>;
+    type TransactionRef = dyn Transaction<dyn Host>;
 
     fn uri(&self) -> String {
         (&*self).uri()

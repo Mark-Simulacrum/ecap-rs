@@ -6,3 +6,4 @@ authors = ["Mark Rousskov <mark.simulacrum@gmail.com>"]
 [dependencies]
 ecap = { path = "../ecap" }
 mopa = "0.2"
+parse-generics-shim = "0.*"
