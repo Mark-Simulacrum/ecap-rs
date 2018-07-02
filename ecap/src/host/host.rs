@@ -1,6 +1,6 @@
 //use adapter::Service;
 use common::log::{DebugStream, LogVerbosity};
-use common::{Body, Message};
+use common::{header::Header, Body, Message};
 //use std::ffi::CStr;
 
 use host::Transaction;
@@ -13,6 +13,7 @@ pub trait Host {
     type Transaction: Transaction<Self>;
     type TransactionRef: Transaction<Self> + ?Sized;
     type Body: Body + ?Sized;
+    type Header: Header + ?Sized;
 
     /// A unique identifer across all vendors.
     fn uri(&self) -> String;

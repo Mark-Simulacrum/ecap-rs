@@ -4,6 +4,7 @@ use ecap::common::Body;
 //use std::ffi::CStr;
 
 //use adapter::{ErasedService, Service};
+use common::header::Header;
 use common::{log::DebugStream, Message};
 use host::Transaction;
 
@@ -24,6 +25,7 @@ impl ecap::host::Host for dyn Host {
     type Transaction = Box<dyn Transaction<dyn Host>>;
     type TransactionRef = dyn Transaction<dyn Host>;
     type Body = dyn Body;
+    type Header = dyn Header;
 
     fn uri(&self) -> String {
         (&*self).uri()

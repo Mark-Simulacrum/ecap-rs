@@ -19,22 +19,12 @@ where
     }
 }
 
-impl<'a> ecap::common::Options for dyn Options + 'a {
-    fn option(&self, name: &Name) -> Option<&Area> {
-        self.option(name)
-    }
-
-    fn visit_each<V: NamedValueVisitor>(&self, mut visitor: V) {
-        self.visit_each(&mut visitor)
-    }
-}
-
 impl<'a> ecap::common::Options for &'a (dyn Options + 'a) {
     fn option(&self, name: &Name) -> Option<&Area> {
-        <Self as Options>::option(self, name)
+        <(dyn Options) as Options>::option(&**self, name)
     }
 
     fn visit_each<V: NamedValueVisitor>(&self, mut visitor: V) {
-        <Self as Options>::visit_each(self, &mut visitor)
+        <(dyn Options) as Options>::visit_each(&**self, &mut visitor)
     }
 }

@@ -1,16 +1,20 @@
 use ffi;
+use libc::c_char;
 use std::ops;
 
 use common::body::CppBody;
+use common::{CppArea, CppName};
 use ecap::common::header::{FirstLine, Header};
 use ecap::common::{Area, Body, Message as ConcreteMessage, Name, NamedValueVisitor, Version};
 use host::CppHost;
+
+use erased_ecap::common::header::Header as ErasedHeader;
 
 use erased_ecap::host::Host as ErasedHost;
 
 foreign_ref!(pub struct CppMessage(ffi::Message));
 
-pub struct CppHeader;
+foreign_ref!(pub struct CppHeader(ffi::Header));
 
 impl Header for CppHeader {
     fn contains_field(&self, field: &Name) -> bool {
@@ -22,11 +26,18 @@ impl Header for CppHeader {
     }
 
     fn insert(&mut self, field: Name, value: Area) {
-        unimplemented!()
+        unsafe {
+            let field = CppName::from_name(&field);
+            let value = CppArea::from_area(value);
+            ffi::rust_shim_header_add(self.as_ptr_mut(), field.as_ptr(), value.as_ptr());
+        }
     }
 
     fn remove_any(&mut self, field: &Name) {
-        unimplemented!()
+        unsafe {
+            let field = CppName::from_name(field);
+            ffi::rust_shim_header_remove_any(self.as_ptr_mut(), field.as_ptr());
+        }
     }
 
     fn visit_each<V: NamedValueVisitor>(&self, visitor: &mut V) {
@@ -93,7 +104,6 @@ impl FirstLine for CppFirstLine {
 }
 
 impl ConcreteMessage<CppHost> for CppMessage {
-    type Header = CppHeader;
     type Trailer = CppTrailer;
     type FirstLine = CppFirstLine;
     type MessageClone = SharedPtrMessage;
@@ -107,10 +117,10 @@ impl ConcreteMessage<CppHost> for CppMessage {
     fn first_line(&self) -> &Self::FirstLine {
         unimplemented!()
     }
-    fn header_mut(&mut self) -> &mut Self::Header {
-        unimplemented!()
+    fn header_mut(&mut self) -> &mut CppHeader {
+        unsafe { CppHeader::from_ptr_mut(ffi::rust_shim_message_header_mut(self.as_ptr_mut())) }
     }
-    fn header(&self) -> &Self::Header {
+    fn header(&self) -> &CppHeader {
         unimplemented!()
     }
     fn add_body(&mut self) {
@@ -141,7 +151,6 @@ impl ConcreteMessage<CppHost> for CppMessage {
 }
 
 impl ConcreteMessage<dyn ErasedHost> for CppMessage {
-    type Header = CppHeader;
     type Trailer = CppTrailer;
     type FirstLine = CppFirstLine;
     type MessageClone = SharedPtrMessage;
@@ -155,10 +164,10 @@ impl ConcreteMessage<dyn ErasedHost> for CppMessage {
     fn first_line(&self) -> &Self::FirstLine {
         unimplemented!()
     }
-    fn header_mut(&mut self) -> &mut Self::Header {
-        unimplemented!()
+    fn header_mut(&mut self) -> &mut (dyn ErasedHeader + 'static) {
+        <Self as ConcreteMessage<CppHost>>::header_mut(self)
     }
-    fn header(&self) -> &Self::Header {
+    fn header(&self) -> &(dyn ErasedHeader + 'static) {
         unimplemented!()
     }
     fn add_body(&mut self) {
@@ -222,7 +231,6 @@ impl Drop for SharedPtrMessage {
 }
 
 impl ConcreteMessage<CppHost> for SharedPtrMessage {
-    type Header = CppHeader;
     type Trailer = CppTrailer;
     type FirstLine = CppFirstLine;
     type MessageClone = SharedPtrMessage;
@@ -236,10 +244,10 @@ impl ConcreteMessage<CppHost> for SharedPtrMessage {
     fn first_line(&self) -> &Self::FirstLine {
         unimplemented!()
     }
-    fn header_mut(&mut self) -> &mut Self::Header {
+    fn header_mut(&mut self) -> &mut CppHeader {
         unimplemented!()
     }
-    fn header(&self) -> &Self::Header {
+    fn header(&self) -> &CppHeader {
         unimplemented!()
     }
     fn add_body(&mut self) {
@@ -263,7 +271,6 @@ impl ConcreteMessage<CppHost> for SharedPtrMessage {
 }
 
 impl ConcreteMessage<dyn ErasedHost> for SharedPtrMessage {
-    type Header = CppHeader;
     type Trailer = CppTrailer;
     type FirstLine = CppFirstLine;
     type MessageClone = SharedPtrMessage;
@@ -277,10 +284,11 @@ impl ConcreteMessage<dyn ErasedHost> for SharedPtrMessage {
     fn first_line(&self) -> &Self::FirstLine {
         unimplemented!()
     }
-    fn header_mut(&mut self) -> &mut Self::Header {
-        unimplemented!()
+    fn header_mut(&mut self) -> &mut (dyn ErasedHeader + 'static) {
+        let msg = <Self as ops::DerefMut>::deref_mut(self);
+        <CppMessage as ConcreteMessage<dyn ErasedHost>>::header_mut(msg)
     }
-    fn header(&self) -> &Self::Header {
+    fn header(&self) -> &(dyn ErasedHeader + 'static) {
         unimplemented!()
     }
     fn add_body(&mut self) {

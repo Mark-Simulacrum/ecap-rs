@@ -3,16 +3,11 @@ use ecap::common::Body;
 use mopa::Any;
 
 use common;
+use common::header::Header;
 
 use host::Host as ErasedHost;
 
 pub trait Message: Any {
-    fn print_self(&self) {
-        unsafe {
-            println!("dyn message is {}", ::std::intrinsics::type_name::<Self>());
-        }
-    }
-
     fn clone(&self) -> Box<dyn Message>;
 
     ///// Always present, determines direction
@@ -22,7 +17,7 @@ pub trait Message: Any {
     //fn first_line_mut(&mut self) -> &mut Self::FirstLine;
     //fn first_line(&self) -> &Self::FirstLine;
 
-    //fn header_mut(&mut self) -> &mut Self::Header;
+    fn header_mut<'a>(&'a mut self) -> &'a mut (dyn Header + 'static);
     //fn header(&self) -> &Self::Header;
 
     //fn add_body(&mut self);
@@ -42,23 +37,20 @@ pub trait Message: Any {
 
 mopafy!(Message);
 
-impl<U, H, T, FL, MC> Message for U
+impl<U, T, FL, MC> Message for U
 where
-    U: ecap::common::Message<
-        dyn ErasedHost,
-        Header = H,
-        Trailer = T,
-        FirstLine = FL,
-        MessageClone = MC,
-    >,
+    U: ecap::common::Message<dyn ErasedHost, Trailer = T, FirstLine = FL, MessageClone = MC>,
     U: 'static,
     MC: ecap::common::Message<dyn ErasedHost> + 'static,
     FL: ecap::common::header::FirstLine + ?Sized,
-    H: ecap::common::header::Header + ?Sized,
     T: ecap::common::header::Header + ?Sized,
 {
     fn clone(&self) -> Box<dyn Message> {
         Box::new(self.clone())
+    }
+
+    fn header_mut<'a>(&'a mut self) -> &'a mut (dyn Header + 'static) {
+        self.header_mut()
     }
 
     fn body<'a>(&'a self) -> Option<&'a (dyn Body + 'static)> {
@@ -72,7 +64,6 @@ where
 impl ecap::common::Message<dyn ErasedHost> for dyn Message {
     type MessageClone = Box<dyn Message>;
     type FirstLine = dyn ecap::common::header::FirstLine;
-    type Header = dyn common::header::Header;
     type Trailer = dyn common::header::Header;
 
     fn clone(&self) -> Self::MessageClone {
@@ -86,11 +77,12 @@ impl ecap::common::Message<dyn ErasedHost> for dyn Message {
         Self::first_line(self)
     }
 
-    fn header_mut(&mut self) -> &mut Self::Header {
-        Self::header_mut(self)
+    fn header_mut(&mut self) -> &mut (dyn Header + 'static) {
+        <Self as Message>::header_mut(self)
     }
-    fn header(&self) -> &Self::Header {
-        Self::header(self)
+    fn header(&self) -> &(dyn Header + 'static) {
+        unimplemented!()
+        //<Self as Message>::header(self)
     }
 
     fn add_body(&mut self) {

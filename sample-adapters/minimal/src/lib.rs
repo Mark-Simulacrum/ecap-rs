@@ -1,3 +1,5 @@
+#![feature(used)]
+
 extern crate ecap;
 extern crate ecap_common_link;
 
@@ -21,11 +23,11 @@ where
         format!("ecap://rust/sample/minimal")
     }
 
-    fn configure<T: Options + ?Sized>(&self, _options: &T) {
+    fn configure<T: Options + ?Sized>(&mut self, _options: &T) {
         // no configuration
     }
 
-    fn reconfigure<T: Options + ?Sized>(&self, _options: &T) {
+    fn reconfigure<T: Options + ?Sized>(&mut self, _options: &T) {
         // no configuration
     }
 
@@ -153,9 +155,10 @@ impl Options for MinimalTransaction {
     }
 }
 
-extern "C" fn on_load() {
+pub extern "C" fn on_load() {
     ecap_common_link::register_erased_service(MinimalService);
 }
 
 #[link_section = ".ctors"]
-pub static _ON_LOAD_PTR: extern "C" fn() = on_load;
+#[used]
+pub static ON_LOAD_PTR: extern "C" fn() = on_load;

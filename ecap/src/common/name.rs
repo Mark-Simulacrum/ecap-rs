@@ -18,9 +18,11 @@ static LAST_ID: AtomicUsize = AtomicUsize::new(0);
 ///
 /// A given name can also be associated by the host with some `u32` ID,
 /// which will persist across adapter boundary.
-#[derive(Clone)]
-pub struct Name {
-    image: Option<Cow<'static, str>>,
+///
+/// XXX: Debug impl
+#[derive(Debug, Clone)]
+pub struct Name<'a> {
+    image: Option<Cow<'a, str>>,
     id: Id,
     host_id: Cell<Option<u32>>,
 }
@@ -32,8 +34,21 @@ pub enum Id {
     Id(u32),
 }
 
-impl Name {
-    pub fn unknown() -> Name {
+impl<'a> Name<'a> {
+    pub fn id(&self) -> Id {
+        self.id
+    }
+
+    pub fn from_raw<I: Into<Cow<'a, str>>>(image: I, id: Id, host_id: Option<u32>) -> Self {
+        let image = image.into();
+        Name {
+            image: if image.is_empty() { None } else { Some(image) },
+            id,
+            host_id: Cell::new(host_id),
+        }
+    }
+
+    pub fn unknown() -> Name<'static> {
         Name {
             image: None,
             id: Id::Unknown,
@@ -41,7 +56,7 @@ impl Name {
         }
     }
 
-    pub fn new_known(image: String) -> Name {
+    pub fn new_known<I: Into<Cow<'a, str>>>(image: I) -> Name<'a> {
         Name {
             image: Some(image.into()),
             id: Id::Unidentified,
@@ -49,7 +64,7 @@ impl Name {
         }
     }
 
-    pub fn new_identified<I: Into<Cow<'static, str>>>(image: I) -> Name {
+    pub fn new_identified<I: Into<Cow<'a, str>>>(image: I) -> Name<'a> {
         Name {
             image: Some(image.into()),
             id: Id::Id(LAST_ID.fetch_add(1, Ordering::Relaxed) as u32),
@@ -115,7 +130,7 @@ impl Name {
     }
 }
 
-impl PartialEq for Name {
+impl<'a> PartialEq for Name<'a> {
     fn eq(&self, other: &Self) -> bool {
         self.known() && if self.identified() {
             self.id == other.id

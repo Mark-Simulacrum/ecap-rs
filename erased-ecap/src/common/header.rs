@@ -1,12 +1,21 @@
 use ecap;
 use ecap::common::{Area, Name, NamedValueVisitor};
 
-pub trait Header {}
+pub trait Header {
+    fn remove_any(&mut self, field: &Name);
+    fn insert(&mut self, field: Name, value: Area);
+}
 
 impl<T: ?Sized> Header for T
 where
     T: ecap::common::header::Header,
 {
+    fn remove_any(&mut self, field: &Name) {
+        self.remove_any(field)
+    }
+    fn insert(&mut self, field: Name, value: Area) {
+        self.insert(field, value)
+    }
 }
 
 impl ecap::common::header::Header for dyn Header {

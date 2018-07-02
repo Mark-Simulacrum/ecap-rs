@@ -1,3 +1,5 @@
+#![feature(used)]
+
 extern crate ecap;
 extern crate ecap_common_link;
 
@@ -21,11 +23,11 @@ where
         format!("ecap://rust/sample/passthru")
     }
 
-    fn configure<T: Options + ?Sized>(&self, _options: &T) {
+    fn configure<T: Options + ?Sized>(&mut self, _options: &T) {
         // no configuration
     }
 
-    fn reconfigure<T: Options + ?Sized>(&self, _options: &T) {
+    fn reconfigure<T: Options + ?Sized>(&mut self, _options: &T) {
         // no configuration
     }
 
@@ -204,4 +206,5 @@ extern "C" fn on_load() {
 }
 
 #[link_section = ".ctors"]
-pub static _ON_LOAD_PTR: extern "C" fn() = on_load;
+#[used]
+pub static ON_LOAD_PTR: extern "C" fn() = on_load;

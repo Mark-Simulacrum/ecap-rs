@@ -42,9 +42,16 @@ pub struct BodySize {
 }
 
 #[repr(C)]
-#[repr(align(8))]
-// De-implement send/sync for now
-pub struct Name([u8; 40], PhantomData<*mut ()>);
+pub struct Name {
+    pub image: PStr,
+    // Unknown = 0,
+    // Unidentified = 1,
+    // ... and rest are normal
+    pub id: c_int,
+    pub host_id: c_int,
+    // De-implement send/sync for now
+    pub phantom: PhantomData<*mut ()>,
+}
 
 #[repr(C)]
 pub struct Area {
@@ -116,7 +123,7 @@ pub unsafe extern "C" fn rust_free_string(s: CVec) {
     mem::drop(s);
 }
 
-pub type VisitorCallback = extern "C" fn(*const Name, *const c_char, size_t, *const c_void);
+pub type VisitorCallback = extern "C" fn(Name, *const c_char, size_t, *const c_void);
 
 extern "C" {
     pub fn rust_shim_version(line: *const FirstLine) -> Version;
@@ -147,15 +154,6 @@ extern "C" {
         cb: VisitorCallback,
         extra: *const c_void,
     );
-
-    pub fn rust_name_new_unknown() -> Name;
-    pub fn rust_name_new_image(buf: *const c_char, len: size_t) -> Name;
-    pub fn rust_name_new_image_id(buf: *const c_char, len: size_t, id: c_int) -> Name;
-    pub fn rust_name_identified(name: *const Name) -> bool;
-    pub fn rust_name_known(name: *const Name) -> bool;
-    pub fn rust_name_eq(a: *const Name, b: *const Name) -> bool;
-    pub fn rust_name_image(a: *const Name) -> PStr;
-    pub fn rust_name_free(name: *mut Name);
 
     pub fn rust_shim_host_xaction_virgin(xaction: *mut HostTransaction) -> *mut Message;
     pub fn rust_shim_host_xaction_cause(xaction: *mut HostTransaction) -> *const Message;

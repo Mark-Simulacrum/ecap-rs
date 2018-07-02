@@ -34,6 +34,14 @@ impl CppArea {
             value
         }
     }
+
+    pub fn as_ptr(&self) -> *const ffi::Area {
+        &self.0
+    }
+
+    pub fn as_ptr_mut(&mut self) -> *mut ffi::Area {
+        &mut self.0
+    }
 }
 
 impl DetailsConstructor for CppArea {

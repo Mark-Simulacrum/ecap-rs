@@ -84,18 +84,21 @@ pub unsafe extern "C" fn rust_service_tag(service: ServicePtr) -> ffi::CVec {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn rust_service_configure(service: ServicePtr, options: *const ffi::Options) {
+pub unsafe extern "C" fn rust_service_configure(
+    mut service: ServicePtr,
+    options: *const ffi::Options,
+) {
     assert!(!options.is_null());
-    to_service(&service).configure(CppOptions::from_ptr(options))
+    to_service_mut(&mut service).configure(CppOptions::from_ptr(options))
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn rust_service_reconfigure(
-    service: ServicePtr,
+    mut service: ServicePtr,
     options: *const ffi::Options,
 ) {
     assert!(!options.is_null());
-    to_service(&service).reconfigure(CppOptions::from_ptr(options))
+    to_service_mut(&mut service).reconfigure(CppOptions::from_ptr(options))
 }
 
 #[no_mangle]

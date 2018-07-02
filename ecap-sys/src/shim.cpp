@@ -18,6 +18,7 @@
 #include <libecap/common/memory.h>
 #include <libecap/common/delay.h>
 #include <sys/time.h>
+#include <climits>
 
 struct RustLogVerbosity {
     size_t mask;
@@ -59,33 +60,42 @@ static_assert(sizeof(libecap::Area::Details) <= DETAILS_SIZE);
 static_assert(alignof(libecap::Area::Details) == DETAILS_ALIGN);
 static_assert(alignof(rust_details__) == DETAILS_ALIGN);
 
-#define NAME_SIZE 40
-#define NAME_ALIGN 8
-
-struct rust_name {
-    char name[NAME_SIZE];
-    uint64_t __align[0];
+// XXX This is intended as a one-to-one copy of the libecap::Name class to bypass `private`
+struct cpp_name {
+    std::string image_;
+    int id_;
+    int hostId_;
 };
 
-// We'll be memcpying the raw bytes in here to preserve them across the C boundary
-static_assert(sizeof(libecap::Name) <= NAME_SIZE);
-static_assert(sizeof(rust_name) == NAME_SIZE);
-static_assert(alignof(libecap::Name) == NAME_ALIGN);
-static_assert(alignof(rust_name) == NAME_ALIGN);
+static_assert(sizeof(cpp_name) == sizeof(libecap::Name));
+static_assert(alignof(cpp_name) == alignof(libecap::Name));
 
-rust_name to_rust_name(libecap::Name name) {
-    rust_name foo;
-    auto name_ptr = new (&foo.name) libecap::Name;
-    *name_ptr = name;
-    return foo;
+struct rust_name {
+    pstr image;
+    int id;
+    int host_id;
+};
+
+// The returned rust_name contains pointers into the passed name and must not outlive name.
+rust_name to_rust_name(const libecap::Name &name) {
+    const cpp_name &namef = reinterpret_cast<const cpp_name &>(name);
+    return rust_name {
+        image: pstr {
+            size: namef.image_.size(),
+            buf: namef.image_.data(),
+        },
+        id: namef.id_,
+        host_id: namef.hostId_,
+    };
 }
 
-const libecap::Name *from_rust_name(const rust_name *name) {
-    return reinterpret_cast<const libecap::Name*>(name);
-}
-
-libecap::Name *from_rust_name(rust_name *name) {
-    return reinterpret_cast<libecap::Name*>(name);
+libecap::Name from_rust_name(const rust_name *name) {
+    auto cpp = cpp_name {
+        image_: std::string(name->image.buf, name->image.size),
+        id_: name->id,
+        hostId_: name->host_id,
+    };
+    return *reinterpret_cast<libecap::Name*>(&cpp);
 }
 
 rust_area to_rust_area(libecap::Area area) {
@@ -320,14 +330,14 @@ extern "C" rust_area options_option(const libecap::Options *options, const char*
     return foo;
 }
 
-typedef void (*visitor_callback)(const rust_name *, const char*, size_t, void*);
+typedef void (*visitor_callback)(const rust_name, const char*, size_t, void*);
 
 class NamedValueVisitorImpl: public libecap::NamedValueVisitor {
     public:
         NamedValueVisitorImpl(visitor_callback a_callback, void* an_extra):
             callback(a_callback), extra(an_extra) {};
         virtual void visit(const libecap::Name &name, const libecap::Area &value) {
-            callback((const rust_name*) &name, value.start, value.size, extra);
+            callback(to_rust_name(name), value.start, value.size, extra);
         }
         visitor_callback callback;
         void* extra;
@@ -505,45 +515,6 @@ Adapter::Service::~Service() {
     rust_service_free(rust_service);
 }
 
-extern "C" rust_name rust_name_new_unknown() {
-    return to_rust_name(libecap::Name());
-}
-
-extern "C" rust_name rust_name_new_image(const char *buf, size_t len) {
-    return to_rust_name(libecap::Name(std::string(buf, len)));
-}
-
-extern "C" rust_name rust_name_new_image_id(const char *buf, size_t len, int id) {
-    return to_rust_name(libecap::Name(std::string(buf, len), id));
-}
-
-extern "C" bool rust_name_identified(rust_name* rname) {
-    return from_rust_name(rname)->identified();
-}
-
-extern "C" bool rust_name_known(rust_name* rname) {
-    return from_rust_name(rname)->known();
-}
-
-extern "C" bool rust_name_eq(rust_name *ra, rust_name *rb) {
-    const libecap::Name &a = *from_rust_name(ra);
-    const libecap::Name &b = *from_rust_name(rb);
-    return a == b;
-}
-
-extern "C" pstr rust_name_image(rust_name *a) {
-    const auto &image = from_rust_name(a)->image();
-    return pstr {
-        size: image.size(),
-        buf: image.data(),
-    };
-}
-
-extern "C" void rust_name_free(rust_name *name) {
-    libecap::Name cpp_name = *reinterpret_cast<libecap::Name*>(name->name);
-    // XXX: test that this actually works to run name's dtor
-}
-
 extern "C" rust_shared_ptr_message rust_shim_message_clone(const libecap::Message *msg) {
     return to_rust_shared_ptr_message(msg->clone());
 }
@@ -634,20 +605,21 @@ extern "C" void rust_shim_set_version(libecap::FirstLine *first_line, const rust
 }
 
 extern "C" void rust_shim_header_has_any(const libecap::Header *header, const rust_name* name) {
-    header->hasAny(*from_rust_name(name));
+    header->hasAny(from_rust_name(name));
 }
 
 extern "C" rust_area rust_shim_header_value(const libecap::Header *header, const rust_name* name) {
-    return to_rust_area(header->value(*from_rust_name(name)));
+    return to_rust_area(header->value(from_rust_name(name)));
 }
 
 extern "C" void rust_shim_header_add(libecap::Header *header, const rust_name* name, const rust_area* value) {
     auto area = libecap::Area(value->buf, value->size);
-    header->add(*from_rust_name(name), area);
+    const libecap::Name namev = from_rust_name(name);
+    header->add(namev, area);
 }
 
 extern "C" void rust_shim_header_remove_any(libecap::Header *header, const rust_name* name) {
-    header->removeAny(*from_rust_name(name));
+    header->removeAny(from_rust_name(name));
 }
 
 extern "C" rust_area rust_shim_header_image(libecap::Header *header) {

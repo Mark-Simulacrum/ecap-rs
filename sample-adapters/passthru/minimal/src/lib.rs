@@ -3,9 +3,9 @@ extern crate ecap_common_link;
 
 use std::ffi::CStr;
 
-use ecap::host;
-use ecap::common::{Name, NamedValueVisitor, Area, Options};
 use ecap::adapter::{Service, Transaction};
+use ecap::common::{Area, Name, NamedValueVisitor, Options};
+use ecap::host;
 
 #[derive(Debug)]
 pub struct MinimalService;
@@ -15,11 +15,11 @@ impl Service for MinimalService {
         format!("ecap://rust/sample/minimal")
     }
 
-    fn configure(&self, _options: &Options) {
+    fn configure(&mut self, _options: &Options) {
         // no configuration
     }
 
-    fn reconfigure(&self, _options: &Options) {
+    fn reconfigure(&mut self, _options: &Options) {
         // no configuration
     }
 

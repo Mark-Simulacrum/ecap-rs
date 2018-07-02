@@ -28,12 +28,12 @@ pub trait Service<H: ?Sized + host::Host> {
     /// Called by the Host to initially configure the adapter service.
     ///
     /// Should only be called once.
-    fn configure<T: Options>(&self, options: &T);
+    fn configure<T: Options>(&mut self, options: &T);
 
     /// Called by the host when the configuration for an adapter
     /// changes. It may be called with the same configuration as passed
     /// previously.
-    fn reconfigure<T: Options>(&self, options: &T);
+    fn reconfigure<T: Options>(&mut self, options: &T);
 
     /// Prepare for creation of transactions via `make_transaction` calls.
     fn start(&self);
@@ -98,11 +98,11 @@ where
     fn describe(&self) -> String {
         (&**self).describe()
     }
-    fn configure<T: Options>(&self, options: &T) {
-        (&**self).configure(options)
+    fn configure<T: Options>(&mut self, options: &T) {
+        (&mut **self).configure(options)
     }
-    fn reconfigure<T: Options>(&self, options: &T) {
-        (&**self).reconfigure(options)
+    fn reconfigure<T: Options>(&mut self, options: &T) {
+        (&mut **self).reconfigure(options)
     }
     fn start(&self) {
         (&**self).start()

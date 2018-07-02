@@ -41,7 +41,9 @@ impl ErasedService {
         if TypeId::of::<H>() == self.host {
             unsafe { Box::from_raw(self.service as *mut dyn Service<H>) }
         } else {
-            panic!("taking with a different host")
+            panic!("taking with a different host: {}", unsafe {
+                type_name::<H>()
+            })
         }
     }
 }
@@ -50,8 +52,8 @@ pub trait Service<H: 'static + host::Host + ?Sized> {
     fn uri(&self) -> String;
     fn tag(&self) -> String;
     fn describe(&self) -> String;
-    fn configure(&self, options: &dyn common::Options);
-    fn reconfigure(&self, options: &dyn common::Options);
+    fn configure(&mut self, options: &dyn common::Options);
+    fn reconfigure(&mut self, options: &dyn common::Options);
     fn start(&self);
     fn stop(&self);
     fn retire(&self);
@@ -98,11 +100,11 @@ where
         S::describe(self)
     }
 
-    fn configure(&self, options: &dyn common::Options) {
+    fn configure(&mut self, options: &dyn common::Options) {
         S::configure(self, &options)
     }
 
-    fn reconfigure(&self, options: &dyn common::Options) {
+    fn reconfigure(&mut self, options: &dyn common::Options) {
         S::reconfigure(self, &options)
     }
 
@@ -146,10 +148,10 @@ impl ecap::adapter::Service<dyn ErasedHost> for dyn Service<dyn ErasedHost> {
     fn describe(&self) -> String {
         Self::describe(self)
     }
-    fn configure<T: ecap::common::Options>(&self, options: &T) {
+    fn configure<T: ecap::common::Options>(&mut self, options: &T) {
         Self::configure(self, options)
     }
-    fn reconfigure<T: ecap::common::Options>(&self, options: &T) {
+    fn reconfigure<T: ecap::common::Options>(&mut self, options: &T) {
         Self::reconfigure(self, options)
     }
     fn start(&self) {

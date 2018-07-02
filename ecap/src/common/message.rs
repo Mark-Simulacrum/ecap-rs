@@ -2,7 +2,6 @@ use common::header::{FirstLine, Header};
 use host::Host;
 
 pub trait Message<H: ?Sized + Host> {
-    type Header: Header + ?Sized;
     type Trailer: Header + ?Sized;
     type FirstLine: FirstLine + ?Sized;
 
@@ -18,8 +17,8 @@ pub trait Message<H: ?Sized + Host> {
     fn first_line_mut(&mut self) -> &mut Self::FirstLine;
     fn first_line(&self) -> &Self::FirstLine;
 
-    fn header_mut(&mut self) -> &mut Self::Header;
-    fn header(&self) -> &Self::Header;
+    fn header_mut(&mut self) -> &mut H::Header;
+    fn header(&self) -> &H::Header;
 
     fn add_body(&mut self);
     fn body_mut(&mut self) -> Option<&mut H::Body>;
@@ -31,7 +30,6 @@ pub trait Message<H: ?Sized + Host> {
 }
 
 impl<H: Host + ?Sized, T: Message<H> + ?Sized> Message<H> for Box<T> {
-    type Header = T::Header;
     type Trailer = T::Trailer;
     type FirstLine = T::FirstLine;
     type MessageClone = T::MessageClone;
@@ -47,10 +45,10 @@ impl<H: Host + ?Sized, T: Message<H> + ?Sized> Message<H> for Box<T> {
         (&**self).first_line()
     }
 
-    fn header_mut(&mut self) -> &mut Self::Header {
+    fn header_mut(&mut self) -> &mut H::Header {
         (&mut **self).header_mut()
     }
-    fn header(&self) -> &Self::Header {
+    fn header(&self) -> &H::Header {
         (&**self).header()
     }
 

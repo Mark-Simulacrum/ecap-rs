@@ -1,3 +1,4 @@
+use std::fmt;
 use std::marker::PhantomData;
 use std::mem;
 use std::ptr::{self, NonNull};
@@ -15,10 +16,18 @@ use std::rc::Rc;
 /// Most of the time you do not want to work with Area itself.
 /// Instead, prefer to create it at the boundary between Host/Adapter
 /// implementations.
+///
+/// XXX: Debug impl
 pub struct Area {
     ptr: DetailsStack,
     // Do not implement Send/Sync.
     _data: PhantomData<*mut ()>,
+}
+
+impl fmt::Debug for Area {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", String::from_utf8_lossy(self.as_bytes()))
+    }
 }
 
 impl Area {
