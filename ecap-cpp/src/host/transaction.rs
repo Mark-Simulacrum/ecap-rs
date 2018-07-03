@@ -16,10 +16,8 @@ use erased_ecap::common::Message as ErasedMessage;
 use erased_ecap::host::Host as ErasedHost;
 use erased_ecap::host::Transaction as ErasedTransaction;
 
-//use ecap::host::Host as ConcreteHost;
 use ecap::host::Transaction as ConcreteTransaction;
 
-//foreign_ref!(pub struct Transaction(ffi::HostTransaction));
 pub struct CppTransaction {
     hostx: *mut ffi::HostTransaction,
 }
@@ -123,12 +121,10 @@ impl ConcreteTransaction<CppHost> for CppTransaction {
         unsafe { CppMessage::from_ptr_mut(ffi::rust_shim_host_xaction_virgin(self.as_ptr_mut())) }
     }
     fn cause(&mut self) -> &CppMessage {
-        unimplemented!()
-        //unsafe { CppMessage::from_ptr(ffi::rust_shim_host_xaction_cause(self.as_ptr_mut())) }
+        unsafe { CppMessage::from_ptr(ffi::rust_shim_host_xaction_cause(self.as_ptr_mut())) }
     }
     fn adapted(&mut self) -> &mut CppMessage {
-        unimplemented!()
-        //unsafe { CppMessage::from_ptr_mut(ffi::rust_shim_host_xaction_adapted(self.as_ptr_mut())) }
+        unsafe { CppMessage::from_ptr_mut(ffi::rust_shim_host_xaction_adapted(self.as_ptr_mut())) }
     }
     fn use_virgin(&mut self) {
         unsafe {
@@ -236,11 +232,9 @@ impl ConcreteTransaction<CppHost> for CppTransaction {
 type TransactionPtr = *mut *mut c_void;
 
 use erased_ecap::adapter::Transaction as AdapterTransaction;
-//use erased_ecap::adapter::Transaction as ErasedTransaction;
 
 #[allow(unused)]
 unsafe fn to_transaction<'a>(transaction: &'a TransactionPtr) -> &'a dyn AdapterTransaction {
-    //unimplemented!()
     assert!(!transaction.is_null());
     let transaction: *mut *mut dyn AdapterTransaction = mem::transmute(*transaction);
     let transaction = *(transaction as *mut *mut dyn AdapterTransaction);
@@ -250,7 +244,6 @@ unsafe fn to_transaction<'a>(transaction: &'a TransactionPtr) -> &'a dyn Adapter
 unsafe fn to_transaction_mut<'a>(
     transaction: &'a mut TransactionPtr,
 ) -> &'a mut dyn AdapterTransaction {
-    //unimplemented!()
     assert!(!transaction.is_null());
     let transaction: *mut *mut dyn AdapterTransaction = mem::transmute(*transaction);
     let transaction = *(transaction as *mut *mut dyn AdapterTransaction);
@@ -322,7 +315,6 @@ pub unsafe extern "C" fn rust_xaction_create(
 ) -> TransactionPtr {
     let mut host = CppTransaction::from_ptr_mut(host);
     let service = to_service_mut(&mut service);
-    //let mut host: Box<dyn ErasedTransaction<dyn ErasedHost>> = Box::new(host);
     let transaction: Box<dyn ErasedAdapterTransaction> = service.make_transaction(&mut host);
     let transaction_ptr = Box::new(transaction);
 

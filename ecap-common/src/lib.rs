@@ -18,12 +18,10 @@ pub extern "C" fn register_service(service: *mut u32) {
 
     let translators = REGISTERED_TRANSLATORS.lock().unwrap();
     if let Some(translator) = translators.first() {
-        println!("registering service directly");
         translator.register_service(*service);
     } else {
         let mut adapters = REGISTERED_ADAPTERS.lock().unwrap();
         adapters.push(*service);
-        println!("registered service (adapters: {})", adapters.len());
     }
 }
 
@@ -36,22 +34,4 @@ pub extern "C" fn register_translator(translator: *mut u32) {
         let mut translators = REGISTERED_TRANSLATORS.lock().unwrap();
         translators.push(*translator);
     }
-
-    //unsafe {
-    //    let b = Box::from_raw(translator as *mut *mut dyn Translator);
-    //    let translator = Box::from_raw(*b);
-    //    let mut translators = REGISTERED_TRANSLATORS.lock().unwrap();
-    //    if !translators.is_empty() {
-    //        panic!("registered two translators!");
-    //    }
-    //    translators.push(translator);
-    //    println!("registered translator (translators: {})", translators.len());
-    //}
-
-    //let translators = REGISTERED_TRANSLATORS.lock().unwrap();
-    //let mut adapters = REGISTERED_ADAPTERS.lock().unwrap();
-    //let translator = translators.first().unwrap();
-    //for service in adapters.drain(..) {
-    //    translator.register_service(service);
-    //}
 }

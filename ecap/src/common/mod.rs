@@ -25,8 +25,3 @@ pub use self::options::Options;
 
 mod version;
 pub use self::version::Version;
-
-/* FIXME: error handling
-mod error;
-pub use self::error::TextError;
-*/

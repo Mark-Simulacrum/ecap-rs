@@ -92,14 +92,14 @@ impl FirstLine for CppFirstLine {
     fn version(&self) -> Version {
         unimplemented!()
     }
-    fn set_version(&mut self, version: Version) {
+    fn set_version(&mut self, _version: Version) {
         unimplemented!()
     }
 
     fn protocol(&self) -> &Name {
         unimplemented!()
     }
-    fn set_protocol(&mut self, protocol: Name) {
+    fn set_protocol(&mut self, _protocol: Name) {
         unimplemented!()
     }
 }

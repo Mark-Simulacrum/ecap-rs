@@ -1,8 +1,6 @@
 use common::{Area, Delay, Message};
 use host::Host;
 
-//mopafy!(Transaction<H: ?Sized + Host>);
-
 /// The host side of the eCAP transaction.
 ///
 /// adapter::Transaction implementors use this interface to get virgin messages.

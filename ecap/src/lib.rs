@@ -2,15 +2,6 @@ pub mod adapter;
 pub mod common;
 pub mod host;
 
-//// XXX: Naming, feature-completness
-//pub struct AllocatedTransaction<'a>(pub Box<dyn Transaction + 'a>);
-//
-//impl<'a> AllocatedTransaction<'a> {
-//    pub fn new<T: Transaction + 'a>(transaction: T) -> Self {
-//        AllocatedTransaction(Box::new(transaction))
-//    }
-//}
-
 use adapter::Service;
 use host::Host;
 

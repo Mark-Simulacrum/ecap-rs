@@ -20,8 +20,8 @@ where
     <T as Service<dyn Host>>::Transaction: 'static,
 {
     unsafe {
-        let service: Box<ErasedService> = Box::new(ErasedService::new(service));
-        ffi::register_service(Box::into_raw(service) as *mut u32);
+        let service = ErasedService::new(service);
+        ffi::register_service(Box::into_raw(Box::new(service)) as *mut u32);
     }
 }
 

@@ -52,6 +52,7 @@ impl LogVerbosity {
         }
     }
 
+    /// XXX: This is quite specific to passing through C.
     pub fn mask(&self) -> usize {
         self.importance as usize | self.frequency as usize | self.size as usize
     }

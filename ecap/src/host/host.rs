@@ -1,9 +1,7 @@
-//use adapter::Service;
 use common::log::{DebugStream, LogVerbosity};
 use common::{
     header::{FirstLine, Header}, Body, Message,
 };
-//use std::ffi::CStr;
 
 use host::Transaction;
 
