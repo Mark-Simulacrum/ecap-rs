@@ -10,4 +10,4 @@ members = [
 ]
 
 [patch.crates-io]
-mopa = { path = "mopa" }
+mopa = { git = "https://github.com/Mark-Simulacrum/mopa", branch = "fork" }
