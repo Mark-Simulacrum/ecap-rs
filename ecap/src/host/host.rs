@@ -6,7 +6,10 @@ use common::{
 use host::Transaction;
 
 /// The primary interface for talking to the host itself.
-pub trait Host {
+pub trait Host
+where
+    <Self::Message as Message<Self>>::MessageClone: Message<Self>,
+{
     type DebugStream: DebugStream;
     type Message: Message<Self>;
     type MessageRef: Message<Self> + ?Sized;
@@ -55,14 +58,10 @@ pub trait Host {
     /// Create a fresh request.
     ///
     /// Utilized when copying an existing Message is not appropriate.
-    ///
-    /// XXX: Arc is maybe wrong type
-    fn new_request(&self) -> Self::Message;
+    fn new_request(&self) -> <Self::Message as Message<Self>>::MessageClone;
 
     /// Create a fresh response.
     ///
     /// Utilized when copying an existing Message is not appropriate.
-    ///
-    /// XXX: Arc is maybe wrong type
-    fn new_response(&self) -> Self::Message;
+    fn new_response(&self) -> <Self::Message as Message<Self>>::MessageClone;
 }

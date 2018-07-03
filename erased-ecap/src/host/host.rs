@@ -57,6 +57,7 @@ where
     H: ecap::host::Host<Message = M, DebugStream = DS> + 'static + ?Sized,
     // FIXME this bound is quite odd
     M: ecap::common::Message<H> + ecap::common::Message<dyn Host> + 'static,
+    <M as ecap::common::Message<H>>::MessageClone: ecap::common::Message<dyn Host>,
     DS: ecap::common::log::DebugStream + 'static,
 {
     fn uri(&self) -> String {

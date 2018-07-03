@@ -3,7 +3,7 @@ use ecap::host::Host;
 
 use common::body::CppBody;
 use common::log::DebugStream;
-use common::message::{CppFirstLine, CppHeader, CppMessage, CppTrailer};
+use common::message::{CppFirstLine, CppHeader, CppMessage, CppTrailer, SharedPtrMessage};
 use host::transaction::{CppTransaction, CppTransactionRef};
 
 pub struct CppHost;
@@ -35,10 +35,10 @@ impl Host for CppHost {
         unimplemented!()
     }
 
-    fn new_request(&self) -> Self::Message {
+    fn new_request(&self) -> SharedPtrMessage {
         unimplemented!()
     }
-    fn new_response(&self) -> Self::Message {
+    fn new_response(&self) -> SharedPtrMessage {
         unimplemented!()
     }
 }
