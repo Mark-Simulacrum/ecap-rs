@@ -76,15 +76,6 @@ where
         &mut self,
         host: &mut (dyn ErasedTransaction<dyn ErasedHost> + 'static),
     ) -> Box<dyn adapter::Transaction> {
-        //let host = host.downcast_mut::<dyn ErasedTransaction<dyn ErasedHost>>()
-        //    .unwrap_or_else(|| unsafe {
-        //        panic!(
-        //            "wrong transaction passed to Service::make_transaction, Self: {}, H: {}, t: {}",
-        //            ::std::intrinsics::type_name::<Self>(),
-        //            "", //::std::intrinsics::type_name::<H>(),
-        //            "", //::std::intrinsics::type_name::<H::Transaction>()
-        //        );
-        //    });
         Box::new(S::make_transaction(self, host))
     }
 

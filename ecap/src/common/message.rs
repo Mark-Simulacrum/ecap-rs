@@ -1,10 +1,6 @@
-use common::header::{FirstLine, Header};
 use host::Host;
 
 pub trait Message<H: ?Sized + Host> {
-    type Trailer: Header + ?Sized;
-    type FirstLine: FirstLine + ?Sized;
-
     // FIXME: Message bound here may be too limiting
     type MessageClone: Message<H> + 'static;
 
@@ -14,8 +10,8 @@ pub trait Message<H: ?Sized + Host> {
     ///
     /// XXX: We cannot do FirstLine without additional code to subclass into the other traits
     /// XXX: Should this return an enum?
-    fn first_line_mut(&mut self) -> &mut Self::FirstLine;
-    fn first_line(&self) -> &Self::FirstLine;
+    fn first_line_mut(&mut self) -> &mut H::FirstLine;
+    fn first_line(&self) -> &H::FirstLine;
 
     fn header_mut(&mut self) -> &mut H::Header;
     fn header(&self) -> &H::Header;
@@ -25,23 +21,21 @@ pub trait Message<H: ?Sized + Host> {
     fn body(&self) -> Option<&H::Body>;
 
     fn add_trailer(&mut self); // XXX: throws by default
-    fn trailer_mut(&mut self) -> &mut Self::Trailer;
-    fn trailer(&self) -> &Self::Trailer;
+    fn trailer_mut(&mut self) -> &mut H::Trailer;
+    fn trailer(&self) -> &H::Trailer;
 }
 
 impl<H: Host + ?Sized, T: Message<H> + ?Sized> Message<H> for Box<T> {
-    type Trailer = T::Trailer;
-    type FirstLine = T::FirstLine;
     type MessageClone = T::MessageClone;
 
     fn clone(&self) -> Self::MessageClone {
         (&**self).clone()
     }
 
-    fn first_line_mut(&mut self) -> &mut Self::FirstLine {
+    fn first_line_mut(&mut self) -> &mut H::FirstLine {
         (&mut **self).first_line_mut()
     }
-    fn first_line(&self) -> &Self::FirstLine {
+    fn first_line(&self) -> &H::FirstLine {
         (&**self).first_line()
     }
 
@@ -65,10 +59,10 @@ impl<H: Host + ?Sized, T: Message<H> + ?Sized> Message<H> for Box<T> {
     fn add_trailer(&mut self) {
         (&mut **self).add_trailer();
     }
-    fn trailer_mut(&mut self) -> &mut Self::Trailer {
+    fn trailer_mut(&mut self) -> &mut H::Trailer {
         (&mut **self).trailer_mut()
     }
-    fn trailer(&self) -> &Self::Trailer {
+    fn trailer(&self) -> &H::Trailer {
         (&**self).trailer()
     }
 }

@@ -1,10 +1,8 @@
 use ecap;
 use ecap::common::log::LogVerbosity;
 use ecap::common::Body;
-//use std::ffi::CStr;
 
-//use adapter::{ErasedService, Service};
-use common::header::Header;
+use common::header::{FirstLine, Header};
 use common::{log::DebugStream, Message};
 use host::Transaction;
 
@@ -26,6 +24,8 @@ impl ecap::host::Host for dyn Host {
     type TransactionRef = dyn Transaction<dyn Host>;
     type Body = dyn Body;
     type Header = dyn Header;
+    type FirstLine = dyn FirstLine;
+    type Trailer = dyn Header;
 
     fn uri(&self) -> String {
         (&*self).uri()

@@ -8,6 +8,7 @@ use ecap::common::header::{FirstLine, Header};
 use ecap::common::{Area, Body, Message as ConcreteMessage, Name, NamedValueVisitor, Version};
 use host::CppHost;
 
+use erased_ecap::common::header::FirstLine as ErasedFirstLine;
 use erased_ecap::common::header::Header as ErasedHeader;
 
 use erased_ecap::host::Host as ErasedHost;
@@ -104,17 +105,15 @@ impl FirstLine for CppFirstLine {
 }
 
 impl ConcreteMessage<CppHost> for CppMessage {
-    type Trailer = CppTrailer;
-    type FirstLine = CppFirstLine;
     type MessageClone = SharedPtrMessage;
 
     fn clone(&self) -> Self::MessageClone {
         unsafe { SharedPtrMessage(Box::new(ffi::rust_shim_message_clone(self.as_ptr()))) }
     }
-    fn first_line_mut(&mut self) -> &mut Self::FirstLine {
+    fn first_line_mut(&mut self) -> &mut CppFirstLine {
         unimplemented!()
     }
-    fn first_line(&self) -> &Self::FirstLine {
+    fn first_line(&self) -> &CppFirstLine {
         unimplemented!()
     }
     fn header_mut(&mut self) -> &mut CppHeader {
@@ -142,26 +141,24 @@ impl ConcreteMessage<CppHost> for CppMessage {
     fn add_trailer(&mut self) {
         unimplemented!()
     }
-    fn trailer_mut(&mut self) -> &mut Self::Trailer {
+    fn trailer_mut(&mut self) -> &mut CppTrailer {
         unimplemented!()
     }
-    fn trailer(&self) -> &Self::Trailer {
+    fn trailer(&self) -> &CppTrailer {
         unimplemented!()
     }
 }
 
 impl ConcreteMessage<dyn ErasedHost> for CppMessage {
-    type Trailer = CppTrailer;
-    type FirstLine = CppFirstLine;
     type MessageClone = SharedPtrMessage;
 
     fn clone(&self) -> Self::MessageClone {
         <Self as ConcreteMessage<CppHost>>::clone(self)
     }
-    fn first_line_mut(&mut self) -> &mut Self::FirstLine {
+    fn first_line_mut(&mut self) -> &mut (dyn ErasedFirstLine + 'static) {
         unimplemented!()
     }
-    fn first_line(&self) -> &Self::FirstLine {
+    fn first_line(&self) -> &(dyn ErasedFirstLine + 'static) {
         unimplemented!()
     }
     fn header_mut(&mut self) -> &mut (dyn ErasedHeader + 'static) {
@@ -185,10 +182,10 @@ impl ConcreteMessage<dyn ErasedHost> for CppMessage {
     fn add_trailer(&mut self) {
         unimplemented!()
     }
-    fn trailer_mut(&mut self) -> &mut Self::Trailer {
+    fn trailer_mut(&mut self) -> &mut (dyn ErasedHeader + 'static) {
         unimplemented!()
     }
-    fn trailer(&self) -> &Self::Trailer {
+    fn trailer(&self) -> &(dyn ErasedHeader + 'static) {
         unimplemented!()
     }
 }
@@ -231,17 +228,15 @@ impl Drop for SharedPtrMessage {
 }
 
 impl ConcreteMessage<CppHost> for SharedPtrMessage {
-    type Trailer = CppTrailer;
-    type FirstLine = CppFirstLine;
     type MessageClone = SharedPtrMessage;
 
     fn clone(&self) -> Self::MessageClone {
         unimplemented!()
     }
-    fn first_line_mut(&mut self) -> &mut Self::FirstLine {
+    fn first_line_mut(&mut self) -> &mut CppFirstLine {
         unimplemented!()
     }
-    fn first_line(&self) -> &Self::FirstLine {
+    fn first_line(&self) -> &CppFirstLine {
         unimplemented!()
     }
     fn header_mut(&mut self) -> &mut CppHeader {
@@ -262,26 +257,24 @@ impl ConcreteMessage<CppHost> for SharedPtrMessage {
     fn add_trailer(&mut self) {
         unimplemented!()
     }
-    fn trailer_mut(&mut self) -> &mut Self::Trailer {
+    fn trailer_mut(&mut self) -> &mut CppTrailer {
         unimplemented!()
     }
-    fn trailer(&self) -> &Self::Trailer {
+    fn trailer(&self) -> &CppTrailer {
         unimplemented!()
     }
 }
 
 impl ConcreteMessage<dyn ErasedHost> for SharedPtrMessage {
-    type Trailer = CppTrailer;
-    type FirstLine = CppFirstLine;
     type MessageClone = SharedPtrMessage;
 
     fn clone(&self) -> Self::MessageClone {
         unimplemented!()
     }
-    fn first_line_mut(&mut self) -> &mut Self::FirstLine {
+    fn first_line_mut(&mut self) -> &mut (dyn ErasedFirstLine + 'static) {
         unimplemented!()
     }
-    fn first_line(&self) -> &Self::FirstLine {
+    fn first_line(&self) -> &(dyn ErasedFirstLine + 'static) {
         unimplemented!()
     }
     fn header_mut(&mut self) -> &mut (dyn ErasedHeader + 'static) {
@@ -304,10 +297,10 @@ impl ConcreteMessage<dyn ErasedHost> for SharedPtrMessage {
     fn add_trailer(&mut self) {
         unimplemented!()
     }
-    fn trailer_mut(&mut self) -> &mut Self::Trailer {
+    fn trailer_mut(&mut self) -> &mut (dyn ErasedHeader + 'static) {
         unimplemented!()
     }
-    fn trailer(&self) -> &Self::Trailer {
+    fn trailer(&self) -> &(dyn ErasedHeader + 'static) {
         unimplemented!()
     }
 }

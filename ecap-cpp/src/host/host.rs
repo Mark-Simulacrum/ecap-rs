@@ -3,8 +3,7 @@ use ecap::host::Host;
 
 use common::body::CppBody;
 use common::log::DebugStream;
-use common::message::CppHeader;
-use common::message::CppMessage;
+use common::message::{CppFirstLine, CppHeader, CppMessage, CppTrailer};
 use host::transaction::{CppTransaction, CppTransactionRef};
 
 pub struct CppHost;
@@ -17,6 +16,8 @@ impl Host for CppHost {
     type TransactionRef = CppTransactionRef;
     type Body = CppBody;
     type Header = CppHeader;
+    type FirstLine = CppFirstLine;
+    type Trailer = CppTrailer;
 
     fn uri(&self) -> String {
         unimplemented!()

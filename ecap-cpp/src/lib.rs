@@ -1,3 +1,4 @@
+#![feature(used)]
 #![allow(unused)]
 extern crate ecap;
 extern crate ecap_common_link;
@@ -42,17 +43,6 @@ pub mod host;
 use ecap::adapter::Service;
 use libc::c_void;
 
-//pub fn register_service<H: ?Sized + ecap::host::Host, T: Service<H>>(service: T) {
-//    unimplemented!()
-//    //unsafe {
-//    //    let service: Box<dyn Service> = Box::new(service);
-//    //    let ptr = Box::into_raw(service);
-//    //    let service_ptr: Box<*mut dyn Service> = Box::new(ptr);
-//    //    let ptr = Box::into_raw(service_ptr) as *mut *mut c_void;
-//    //    ffi::rust_shim_register_service(ptr);
-//    //}
-//}
-
 use ecap::Translator;
 
 struct CppTranslator;
@@ -66,9 +56,10 @@ impl Translator for CppTranslator {
     }
 }
 
-extern "C" fn on_load() {
+pub extern "C" fn on_load() {
     ecap_common_link::register_erased_translator(CppTranslator);
 }
 
 #[link_section = ".ctors"]
+#[used]
 pub static __ON_LOAD_PTR: extern "C" fn() = on_load;
