@@ -58,7 +58,7 @@ pub trait Service<H: ?Sized + host::Host> {
     ///
     /// Note that it *must not* call any other methods on host::Transaction.
     fn resume(&self) {
-        unimplemented!("Service::suspend is not implemented for this async adapter");
+        unimplemented!("Service::resume is not implemented for this async adapter");
     }
 
     /// Pause making transactions until `start` is called. Note that it
