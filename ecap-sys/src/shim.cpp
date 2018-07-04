@@ -448,49 +448,28 @@ XACTION_METHOD_SHIM(rust_xaction_ab_pause, abPause);
 XACTION_METHOD_SHIM(rust_xaction_ab_resume, abResume);
 XACTION_METHOD_SHIM(rust_xaction_vb_content_available, noteVbContentAvailable);
 
-extern "C" void rust_shim_host_xaction_use_virgin(libecap::host::Xaction *xaction) {
-    xaction->useVirgin();
-}
 
-extern "C" void rust_shim_host_xaction_block_virgin(libecap::host::Xaction *xaction) {
-    xaction->blockVirgin();
-}
+#define XACTION_METHOD_C_SHIM_INTERNAL(cpp_name__, c_name__) \
+    extern "C" void c_name__(libecap::host::Xaction *xaction) { \
+        xaction->cpp_name__();\
+    }
+#define XACTION_METHOD_C_SHIM(cpp_name__, c_name__) \
+    XACTION_METHOD_C_SHIM_INTERNAL(cpp_name__, rust_shim_host_xaction_ ## c_name__)
 
-extern "C" void rust_shim_host_xaction_adaptation_aborted(libecap::host::Xaction *xaction) {
-    xaction->adaptationAborted();
-}
+XACTION_METHOD_C_SHIM(useVirgin, use_virgin);
+XACTION_METHOD_C_SHIM(blockVirgin, block_virgin);
+XACTION_METHOD_C_SHIM(adaptationAborted, adaptation_aborted);
+XACTION_METHOD_C_SHIM(resume, resume);
+XACTION_METHOD_C_SHIM(vbMake, vb_make);
+XACTION_METHOD_C_SHIM(vbDiscard, vb_discard);
+XACTION_METHOD_C_SHIM(vbPause, vb_pause);
+XACTION_METHOD_C_SHIM(vbResume, vb_resume);
+XACTION_METHOD_C_SHIM(vbMakeMore, vb_make_more);
+XACTION_METHOD_C_SHIM(vbStopMaking, vb_stop_making);
 
 extern "C" void rust_shim_host_xaction_adaptation_delayed(libecap::host::Xaction *xaction,
         const char* state, size_t len, double progress) {
     xaction->adaptationDelayed(libecap::Delay(std::string(state, len), progress));
-}
-
-extern "C" void rust_shim_host_xaction_resume(libecap::host::Xaction *xaction) {
-    xaction->resume();
-}
-
-extern "C" void rust_shim_host_xaction_vb_make(libecap::host::Xaction *xaction) {
-    xaction->vbMake();
-}
-
-extern "C" void rust_shim_host_xaction_vb_discard(libecap::host::Xaction *xaction) {
-    xaction->vbDiscard();
-}
-
-extern "C" void rust_shim_host_xaction_vb_pause(libecap::host::Xaction *xaction) {
-    xaction->vbDiscard();
-}
-
-extern "C" void rust_shim_host_xaction_vb_resume(libecap::host::Xaction *xaction) {
-    xaction->vbResume();
-}
-
-extern "C" void rust_shim_host_xaction_vb_make_more(libecap::host::Xaction *xaction) {
-    xaction->vbMakeMore();
-}
-
-extern "C" void rust_shim_host_xaction_vb_stop_making(libecap::host::Xaction *xaction) {
-    xaction->vbStopMaking();
 }
 
 extern "C" rust_area rust_shim_host_xaction_vb_content(libecap::host::Xaction *xaction, size_t offset, size_t size) {
@@ -519,13 +498,11 @@ extern "C" rust_shared_ptr_message rust_shim_message_clone(const libecap::Messag
     return to_rust_shared_ptr_message(msg->clone());
 }
 
-extern "C" const libecap::FirstLine *rust_shim_message_first_line(const void *in_msg) {
-    const auto *msg = reinterpret_cast<const libecap::Message*>(in_msg);
+extern "C" const libecap::FirstLine *rust_shim_message_first_line(const libecap::Message *msg) {
     return &msg->firstLine();
 }
 
-extern "C" libecap::FirstLine *rust_shim_message_first_line_mut(void *in_msg) {
-    auto *msg = reinterpret_cast<libecap::Message*>(in_msg);
+extern "C" libecap::FirstLine *rust_shim_message_first_line_mut(libecap::Message *msg) {
     return &msg->firstLine();
 }
 

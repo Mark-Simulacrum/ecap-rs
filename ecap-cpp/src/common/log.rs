@@ -16,8 +16,7 @@ impl DebugStream {
             if ptr.is_null() {
                 DebugStream(None)
             } else {
-                let ostream = ptr as *mut Ostream;
-                DebugStream(Some(NonNull::from(&mut *ostream)))
+                DebugStream(Some(NonNull::from(Ostream::from_ptr_mut(ptr))))
             }
         }
     }
@@ -38,7 +37,7 @@ impl Drop for DebugStream {
     fn drop(&mut self) {
         if let Some(mut stream) = self.0.take() {
             unsafe {
-                ffi::rust_shim_host_close_debug(stream.as_mut() as *mut _ as *mut ffi::Ostream);
+                ffi::rust_shim_host_close_debug(stream.as_mut().as_ptr_mut());
             }
         }
     }
@@ -49,11 +48,7 @@ foreign_ref!(pub struct Ostream(ffi::Ostream));
 impl fmt::Write for Ostream {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         unsafe {
-            ffi::rust_shim_ostream_write(
-                self as *mut _ as *mut ffi::Ostream,
-                s.as_ptr() as *const c_char,
-                s.len(),
-            );
+            ffi::rust_shim_ostream_write(self.as_ptr_mut(), s.as_ptr() as *const c_char, s.len());
         }
         Ok(())
     }
