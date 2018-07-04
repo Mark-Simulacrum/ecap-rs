@@ -56,9 +56,4 @@ impl<'a, 'b> CppName<'a, 'b> {
     pub fn as_ptr(&self) -> *const ffi::Name {
         &self.cpp
     }
-
-    // XXX: probably don't want this
-    pub fn as_ptr_mut(&mut self) -> *mut ffi::Name {
-        &mut self.cpp
-    }
 }

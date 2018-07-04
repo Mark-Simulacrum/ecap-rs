@@ -1,26 +1,20 @@
 use ffi;
 use libc::{c_char, c_int, c_void, size_t};
 
-use common::CppName;
+use common::{CppArea, CppName};
 use ecap::common::{Area, Name, NamedValueVisitor, Options};
 
 foreign_ref!(pub struct CppOptions(ffi::Options));
 
 impl Options for CppOptions {
     fn option(&self, name: &Name) -> Option<&Area> {
-        unimplemented!()
-        //let name_s = name.image().unwrap_or("".into());
-        //unsafe {
-        //    let area = ffi::options_option(
-        //        self as *const _ as *const _,
-        //        name_s.as_ptr() as *const _,
-        //        name_s.len(),
-        //    );
-        //    Some(Area::from_bytes(::std::slice::from_raw_parts(
-        //        area.buf as *mut u8 as *const u8,
-        //        area.size,
-        //    )))
-        //}
+        let name = CppName::from_name(name);
+        unsafe {
+            let area = ffi::options_option(self as *const _ as *const _, name.as_ptr());
+            unimplemented!()
+            // XXX: this API is impossible to implement; we need to return Option<Area>.
+            //Some(CppArea::from_raw(area).into())
+        }
     }
 
     fn visit_each<V: NamedValueVisitor>(&self, mut visitor: V) {
@@ -44,10 +38,11 @@ extern "C" fn visitor_callback(
     assert!(!buf.is_null());
     assert!(!cb.is_null());
     unsafe {
-        let value = ::std::slice::from_raw_parts(buf as *const u8, len);
         let visitor = &mut **(cb as *mut *mut dyn NamedValueVisitor);
 
         let name = CppName::from_raw(&name);
+        // XXX: Copying data for the area needlessly
+        let value = ::std::slice::from_raw_parts(buf as *const u8, len);
         visitor.visit(&name, &Area::from_bytes(value));
     }
 }

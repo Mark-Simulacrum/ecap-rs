@@ -191,7 +191,7 @@ extern "C" {
     pub fn rust_area_new_slice(buf: *const c_char, len: size_t) -> Area;
     pub fn rust_area_free(area: *mut Area);
 
-    pub fn options_option(options: *const Options, buf: *const c_char, len: size_t) -> Area;
+    pub fn options_option(options: *const Options, name: *const Name) -> Area;
     pub fn options_visit(options: *const Options, cb: VisitorCallback, extra: *const c_void);
 
     pub fn rust_host() -> *const Host;

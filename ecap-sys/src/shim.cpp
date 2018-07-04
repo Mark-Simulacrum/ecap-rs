@@ -318,10 +318,12 @@ void Adapter::Service::describe(std::ostream &os) const {
     ::rust_service_describe(rust_service, &os);
 }
 
-extern "C" rust_area options_option(const libecap::Options *options, const char* buf, size_t len) {
+extern "C" rust_area options_option(const libecap::Options *options, const rust_name* rname) {
     Must(options);
-    libecap::Name name = libecap::Name(std::string(buf, len));
+    // XXX: unavoidable copy due to Name's API
+    libecap::Name name = from_rust_name(rname);
     libecap::Area area = options->option(name);
+    // XXX: copying areas
     rust_area foo;
     foo.size = area.size;
     foo.buf = area.start;

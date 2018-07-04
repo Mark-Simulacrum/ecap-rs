@@ -24,13 +24,18 @@ macro_rules! foreign_ref {
             }
 
             #[inline]
+            pub unsafe fn from_ptr_mut_opt(p: *mut $cname) -> *mut Self {
+                p as *mut _
+            }
+
+            #[inline]
             pub fn as_ptr<'a>(&self) -> *const $cname {
-                self as *const _ as *mut $cname
+                self as *const Self as *const $cname
             }
 
             #[inline]
             pub fn as_ptr_mut<'a>(&mut self) -> *mut $cname {
-                self as *mut _ as *mut $cname
+                self as *mut Self as *mut $cname
             }
         }
     };
