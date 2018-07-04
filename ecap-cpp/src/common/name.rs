@@ -39,7 +39,6 @@ impl<'a, 'b> CppName<'a, 'b> {
     pub fn from_raw(name: &'a ffi::Name) -> Name<'a> {
         unsafe {
             let image = slice::from_raw_parts(name.image.buf as *const u8, name.image.size);
-            let image = str::from_utf8(image).unwrap(); // XXX: expensive, also, should this be here?
             let id = match name.id {
                 0 => Id::Unknown,
                 1 => Id::Unidentified,

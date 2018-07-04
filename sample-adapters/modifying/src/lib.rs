@@ -168,10 +168,11 @@ impl<H: host::Host + ?Sized> Transaction<H> for ModifyTransaction {
 
         let mut adapted = host.virgin().clone();
         // FIXME: assert!(adapted.is_some()); -- can host return None from clone?
-        let content_length = Name::new_known("Content-Length".to_owned());
+        // XXX: This content-length should be gotten from the host.
+        let content_length = Name::new_known("Content-Length".as_bytes());
         adapted.header_mut().remove_any(&content_length);
 
-        let name = Name::new_known("X-Ecap");
+        let name = Name::new_known("X-Ecap".as_bytes());
         // XXX: use host global and get uri
         let value = Area::from_bytes(b"foo");
         adapted.header_mut().insert(name, value);
@@ -308,13 +309,13 @@ impl<'a> NamedValueVisitor for CfgVisitor<'a> {
     fn visit(&mut self, name: &Name, value: &Area) {
         let value = value.as_bytes();
         match name.image() {
-            Some("victim") => {
+            Some(b"victim") => {
                 if value.is_empty() {
                     panic!("unsupported empty victim");
                 }
                 self.0.victim = Some(Rc::new(value.into()));
             }
-            Some("replacement") => {
+            Some(b"replacement") => {
                 self.0.replacement = Some(Rc::new(value.into()));
             }
             _ if name.host_id().is_some() => {

@@ -22,7 +22,7 @@ static LAST_ID: AtomicUsize = AtomicUsize::new(0);
 /// XXX: Debug impl
 #[derive(Debug, Clone)]
 pub struct Name<'a> {
-    image: Option<Cow<'a, str>>,
+    image: Option<Cow<'a, [u8]>>,
     id: Id,
     host_id: Cell<Option<u32>>,
 }
@@ -39,7 +39,7 @@ impl<'a> Name<'a> {
         self.id
     }
 
-    pub fn from_raw<I: Into<Cow<'a, str>>>(image: I, id: Id, host_id: Option<u32>) -> Self {
+    pub fn from_raw<I: Into<Cow<'a, [u8]>>>(image: I, id: Id, host_id: Option<u32>) -> Self {
         let image = image.into();
         Name {
             image: if image.is_empty() { None } else { Some(image) },
@@ -56,7 +56,7 @@ impl<'a> Name<'a> {
         }
     }
 
-    pub fn new_known<I: Into<Cow<'a, str>>>(image: I) -> Name<'a> {
+    pub fn new_known<I: Into<Cow<'a, [u8]>>>(image: I) -> Name<'a> {
         Name {
             image: Some(image.into()),
             id: Id::Unidentified,
@@ -64,7 +64,7 @@ impl<'a> Name<'a> {
         }
     }
 
-    pub fn new_identified<I: Into<Cow<'a, str>>>(image: I) -> Name<'a> {
+    pub fn new_identified<I: Into<Cow<'a, [u8]>>>(image: I) -> Name<'a> {
         Name {
             image: Some(image.into()),
             id: Id::Id(LAST_ID.fetch_add(1, Ordering::Relaxed) as u32),
@@ -107,7 +107,7 @@ impl<'a> Name<'a> {
     /// Retrieves the string representation of this `Name`.
     ///
     /// It may not exist, in which case this will return `None`.
-    pub fn image(&self) -> Option<&str> {
+    pub fn image(&self) -> Option<&[u8]> {
         self.image.as_ref().map(|s| s.as_ref())
     }
 

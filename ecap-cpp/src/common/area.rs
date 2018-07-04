@@ -44,6 +44,12 @@ impl CppArea {
     }
 }
 
+impl Into<Area> for CppArea {
+    fn into(self) -> Area {
+        Area::new(self)
+    }
+}
+
 impl DetailsConstructor for CppArea {
     fn details(self) -> DetailsStack {
         Rc::new(self).details()
