@@ -293,7 +293,7 @@ impl<H: host::Host + ?Sized> Transaction<H> for ModifyTransaction {
 }
 
 impl Options for ModifyTransaction {
-    fn option(&self, _name: &Name) -> Option<&Area> {
+    fn option(&self, _name: &Name) -> Option<Area> {
         // no meta-information to provide
         None
     }

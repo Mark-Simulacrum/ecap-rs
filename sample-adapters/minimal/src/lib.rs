@@ -145,7 +145,7 @@ impl<H: host::Host + ?Sized> Transaction<H> for MinimalTransaction {
 }
 
 impl Options for MinimalTransaction {
-    fn option(&self, _name: &Name) -> Option<&Area> {
+    fn option(&self, _name: &Name) -> Option<Area> {
         // no meta-information to provide
         None
     }

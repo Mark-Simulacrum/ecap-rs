@@ -159,7 +159,7 @@ impl ecap::adapter::Transaction<dyn ErasedHost> for dyn Transaction {
 }
 
 impl<'a> ecap::common::Options for dyn Transaction + 'a {
-    fn option(&self, name: &Name) -> Option<&Area> {
+    fn option(&self, name: &Name) -> Option<Area> {
         self.option(name)
     }
 

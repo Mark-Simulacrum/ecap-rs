@@ -191,7 +191,7 @@ impl<H: host::Host + ?Sized> Transaction<H> for PassthruTransaction {
 }
 
 impl Options for PassthruTransaction {
-    fn option(&self, _name: &Name) -> Option<&Area> {
+    fn option(&self, _name: &Name) -> Option<Area> {
         // no meta-information to provide
         None
     }

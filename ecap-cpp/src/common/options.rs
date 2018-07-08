@@ -7,13 +7,11 @@ use ecap::common::{Area, Name, NamedValueVisitor, Options};
 foreign_ref!(pub struct CppOptions(ffi::Options));
 
 impl Options for CppOptions {
-    fn option(&self, name: &Name) -> Option<&Area> {
+    fn option(&self, name: &Name) -> Option<Area> {
         let name = CppName::from_name(name);
         unsafe {
             let area = ffi::options_option(self as *const _ as *const _, name.as_ptr());
-            unimplemented!()
-            // XXX: this API is impossible to implement; we need to return Option<Area>.
-            //Some(CppArea::from_raw(area).into())
+            Some(CppArea::from_raw(area).into())
         }
     }
 
