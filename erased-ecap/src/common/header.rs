@@ -1,5 +1,4 @@
 use ecap;
-use ecap::common::Version;
 use ecap::common::{Area, Name, NamedValueVisitor};
 
 pub trait Header {
@@ -63,26 +62,4 @@ impl ecap::common::header::Header for dyn Header {
     }
 }
 
-pub trait FirstLine {}
-
-impl<T: ?Sized> FirstLine for T
-where
-    T: ecap::common::header::FirstLine,
-{
-}
-
-impl ecap::common::header::FirstLine for dyn FirstLine {
-    fn version(&self) -> Version {
-        unimplemented!()
-    }
-    fn set_version(&mut self, version: Version) {
-        unimplemented!()
-    }
-
-    fn protocol(&self) -> &Name {
-        unimplemented!()
-    }
-    fn set_protocol(&mut self, protocol: Name) {
-        unimplemented!()
-    }
-}
+pub use ecap::common::header::{FirstLine, RequestLine, StatusLine};

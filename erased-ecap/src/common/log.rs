@@ -2,9 +2,7 @@ use ecap;
 use mopa::Any;
 use std::fmt;
 
-pub trait DebugStream: fmt::Write + Any {
-    // nothing
-}
+pub trait DebugStream: fmt::Write + Any {}
 
 mopafy!(DebugStream);
 

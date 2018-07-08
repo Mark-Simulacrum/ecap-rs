@@ -32,10 +32,10 @@ impl ecap::host::Transaction<dyn crate::host::Host> for dyn Transaction<dyn crat
         Self::virgin(self)
     }
     fn cause(&mut self) -> &dyn Message {
-        unimplemented!()
+        Self::cause(self)
     }
     fn adapted(&mut self) -> &mut dyn Message {
-        unimplemented!()
+        Self::adapted(self)
     }
     fn use_virgin(&mut self) {
         Self::use_virgin(self)
