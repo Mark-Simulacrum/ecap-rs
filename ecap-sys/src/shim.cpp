@@ -523,12 +523,28 @@ extern "C" libecap::FirstLine *rust_shim_message_first_line_mut(libecap::Message
     return &msg->firstLine();
 }
 
+extern "C" void rust_shim_message_add_body(libecap::Message *msg) {
+    msg->addBody();
+}
+
 extern "C" const libecap::Body *rust_shim_message_body(const libecap::Message *msg) {
     return msg->body();
 }
 
 extern "C" libecap::Body *rust_shim_message_body_mut(libecap::Message *msg) {
     return msg->body();
+}
+
+extern "C" void rust_shim_message_add_trailer(libecap::Message *msg) {
+    msg->addTrailer();
+}
+
+extern "C" const libecap::Header *rust_shim_message_trailer(const libecap::Message *msg) {
+    return msg->trailer();
+}
+
+extern "C" libecap::Header *rust_shim_message_trailer_mut(libecap::Message *msg) {
+    return msg->trailer();
 }
 
 extern "C" const libecap::Header *rust_shim_message_header(const libecap::Message *msg) {
@@ -584,9 +600,8 @@ extern "C" body_size rust_shim_body_size(libecap::Body *body) {
     }
 }
 
-extern "C" rust_version rust_shim_version(const void *first_line) {
-    const auto *msg = reinterpret_cast<const libecap::FirstLine*>(first_line);
-    const auto version = msg->version();
+extern "C" rust_version rust_shim_first_line_version(const libecap::FirstLine *first_line) {
+    const auto version = first_line->version();
     return rust_version {
         majr: version.majr,
         minr: version.minr,
@@ -594,12 +609,20 @@ extern "C" rust_version rust_shim_version(const void *first_line) {
     };
 }
 
-extern "C" void rust_shim_set_version(libecap::FirstLine *first_line, const rust_version *version) {
+extern "C" void rust_shim_first_line_set_version(libecap::FirstLine *first_line, const rust_version *version) {
     first_line->version(libecap::Version(version->majr, version->minr, version->micr));
 }
 
-extern "C" void rust_shim_header_has_any(const libecap::Header *header, const rust_name* name) {
-    header->hasAny(from_rust_name(name));
+extern "C" rust_name rust_shim_first_line_protocol(const libecap::FirstLine *first_line) {
+    return to_rust_name(first_line->protocol());
+}
+
+extern "C" void rust_shim_first_line_set_protocol(libecap::FirstLine *first_line, const rust_name* protocol) {
+    first_line->protocol(from_rust_name(protocol));
+}
+
+extern "C" bool rust_shim_header_has_any(const libecap::Header *header, const rust_name* name) {
+    return header->hasAny(from_rust_name(name));
 }
 
 extern "C" rust_area rust_shim_header_value(const libecap::Header *header, const rust_name* name) {

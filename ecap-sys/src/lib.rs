@@ -126,14 +126,20 @@ pub unsafe extern "C" fn rust_free_string(s: CVec) {
 pub type VisitorCallback = extern "C" fn(Name, Area, *mut c_void);
 
 extern "C" {
-    pub fn rust_shim_version(line: *const FirstLine) -> Version;
-    pub fn rust_shim_set_version(line: *mut FirstLine, version: *const Version);
+    pub fn rust_shim_first_line_version(line: *const FirstLine) -> Version;
+    pub fn rust_shim_first_line_set_version(line: *mut FirstLine, version: *const Version);
+    pub fn rust_shim_first_line_protocol(line: *const FirstLine) -> Name;
+    pub fn rust_shim_first_line_set_protocol(line: *mut FirstLine, protocol: *const Name);
 
     pub fn rust_shim_message_first_line(msg: *const Message) -> *const FirstLine;
     pub fn rust_shim_message_first_line_mut(msg: *mut Message) -> *mut FirstLine;
 
     pub fn rust_shim_message_header(msg: *const Message) -> *const Header;
     pub fn rust_shim_message_header_mut(msg: *mut Message) -> *mut Header;
+    pub fn rust_shim_message_add_body(msg: *mut Message);
+    pub fn rust_shim_message_add_trailer(msg: *mut Message);
+    pub fn rust_shim_message_trailer(msg: *const Message) -> *const Header;
+    pub fn rust_shim_message_trailer_mut(msg: *mut Message) -> *mut Header;
     pub fn rust_shim_message_body(msg: *const Message) -> *const Body;
     pub fn rust_shim_message_body_mut(msg: *mut Message) -> *mut Body;
     pub fn rust_shim_message_clone(msg: *const Message) -> SharedPtrMessage;

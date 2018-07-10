@@ -27,7 +27,7 @@ impl Options for CppOptions {
     }
 }
 
-extern "C" fn visitor_callback(name: ffi::Name, area: ffi::Area, cb: *mut c_void) {
+pub extern "C" fn visitor_callback(name: ffi::Name, area: ffi::Area, cb: *mut c_void) {
     assert!(!cb.is_null());
     unsafe {
         let visitor = &mut **(cb as *mut *mut dyn NamedValueVisitor);

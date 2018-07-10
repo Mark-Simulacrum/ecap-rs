@@ -4,7 +4,7 @@ use ffi;
 
 use common::body::CppBody;
 use common::log::DebugStream;
-use common::message::{CppFirstLine, CppHeader, CppMessage, CppTrailer, SharedPtrMessage};
+use common::message::{CppFirstLine, CppHeader, CppMessage, SharedPtrMessage};
 use host::transaction::{CppTransaction, CppTransactionRef};
 
 use std::mem;
@@ -31,7 +31,7 @@ impl Host for CppHost {
     type Body = CppBody;
     type Header = CppHeader;
     type FirstLine = CppFirstLine;
-    type Trailer = CppTrailer;
+    type Trailer = CppHeader;
 
     fn uri(&self) -> String {
         unsafe {

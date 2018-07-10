@@ -17,7 +17,7 @@ pub trait Header {
     ///
     /// This returns an owned `Area` because it may need to allocate in
     /// the list case.
-    fn get(&self, field: &Name) -> Option<&Area>;
+    fn get(&self, field: &Name) -> Option<Area>;
 
     /// Insert a field, value pair into the header.
     fn insert(&mut self, field: Name, value: Area);
@@ -29,7 +29,7 @@ pub trait Header {
     fn visit_each<V: NamedValueVisitor>(&self, visitor: &mut V);
 
     /// Area view on the underlying buffer representing this header.
-    fn image(&self) -> &Area;
+    fn image(&self) -> Area;
 
     /// Parses a given buffer into this Header.
     ///
@@ -48,7 +48,7 @@ pub trait FirstLine {
     fn version(&self) -> Version;
     fn set_version(&mut self, version: Version);
 
-    fn protocol(&self) -> &Name;
+    fn protocol(&self) -> Name;
     fn set_protocol(&mut self, protocol: Name);
 }
 
@@ -56,10 +56,10 @@ pub trait FirstLine {
 ///
 /// This is only present in requests.
 pub trait RequestLine: FirstLine {
-    fn uri(&self) -> &Area;
+    fn uri(&self) -> Area;
     fn set_uri(&mut self, area: Area);
 
-    fn method(&self) -> &Name;
+    fn method(&self) -> Name;
     fn set_method(&mut self, name: Name);
 }
 
@@ -70,6 +70,6 @@ pub trait StatusLine: FirstLine {
     fn status_code(&self) -> u16;
     fn set_status_code(&mut self, code: u16);
 
-    fn reason_phrase(&self) -> &Name;
+    fn reason_phrase(&self) -> Name;
     fn set_reason_phrase(&mut self, name: Name);
 }

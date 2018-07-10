@@ -39,6 +39,17 @@ impl<'a> Name<'a> {
         self.id
     }
 
+    pub fn to_owned(self) -> Name<'static> {
+        Name {
+            id: self.id,
+            host_id: self.host_id,
+            image: match self.image {
+                Some(cow) => Some(Cow::from(cow.into_owned())),
+                None => None,
+            },
+        }
+    }
+
     pub fn from_raw<I: Into<Cow<'a, [u8]>>>(image: I, id: Id, host_id: Option<u32>) -> Self {
         let image = image.into();
         Name {

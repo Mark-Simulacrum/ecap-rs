@@ -3,11 +3,11 @@ use ecap::common::{Area, Name, NamedValueVisitor};
 
 pub trait Header {
     fn contains_field(&self, field: &Name) -> bool;
-    fn get(&self, field: &Name) -> Option<&Area>;
+    fn get(&self, field: &Name) -> Option<Area>;
     fn remove_any(&mut self, field: &Name);
     fn insert(&mut self, field: Name, value: Area);
     fn visit_each(&self, visitor: &mut dyn NamedValueVisitor);
-    fn image(&self) -> &Area;
+    fn image(&self) -> Area;
     fn parse(&mut self, buf: &Area) -> Result<(), ()>;
 }
 
@@ -18,7 +18,7 @@ where
     fn contains_field(&self, field: &Name) -> bool {
         self.contains_field(field)
     }
-    fn get(&self, field: &Name) -> Option<&Area> {
+    fn get(&self, field: &Name) -> Option<Area> {
         self.get(field)
     }
     fn remove_any(&mut self, field: &Name) {
@@ -30,7 +30,7 @@ where
     fn visit_each(&self, mut visitor: &mut dyn NamedValueVisitor) {
         self.visit_each(&mut visitor)
     }
-    fn image(&self) -> &Area {
+    fn image(&self) -> Area {
         self.image()
     }
     fn parse(&mut self, buf: &Area) -> Result<(), ()> {
@@ -42,7 +42,7 @@ impl ecap::common::header::Header for dyn Header {
     fn contains_field(&self, field: &Name) -> bool {
         Self::contains_field(self, field)
     }
-    fn get(&self, field: &Name) -> Option<&Area> {
+    fn get(&self, field: &Name) -> Option<Area> {
         Self::get(self, field)
     }
     fn insert(&mut self, field: Name, value: Area) {
@@ -54,7 +54,7 @@ impl ecap::common::header::Header for dyn Header {
     fn visit_each<V: NamedValueVisitor>(&self, visitor: &mut V) {
         Self::visit_each(self, visitor)
     }
-    fn image(&self) -> &Area {
+    fn image(&self) -> Area {
         Self::image(self)
     }
     fn parse(&mut self, buf: &Area) -> Result<(), ()> {
