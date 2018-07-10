@@ -123,7 +123,7 @@ pub unsafe extern "C" fn rust_free_string(s: CVec) {
     mem::drop(s);
 }
 
-pub type VisitorCallback = extern "C" fn(Name, *const c_char, size_t, *const c_void);
+pub type VisitorCallback = extern "C" fn(Name, Area, *mut c_void);
 
 extern "C" {
     pub fn rust_shim_version(line: *const FirstLine) -> Version;
@@ -192,7 +192,7 @@ extern "C" {
     pub fn rust_area_free(area: *mut Area);
 
     pub fn options_option(options: *const Options, name: *const Name) -> Area;
-    pub fn options_visit(options: *const Options, cb: VisitorCallback, extra: *const c_void);
+    pub fn options_visit(options: *const Options, cb: VisitorCallback, extra: *mut c_void);
 
     pub fn rust_host() -> *const Host;
     pub fn rust_shim_host_uri() -> CVec;

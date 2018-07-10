@@ -332,14 +332,14 @@ extern "C" rust_area options_option(const libecap::Options *options, const rust_
     return foo;
 }
 
-typedef void (*visitor_callback)(const rust_name, const char*, size_t, void*);
+typedef void (*visitor_callback)(const rust_name, const rust_area, void*);
 
 class NamedValueVisitorImpl: public libecap::NamedValueVisitor {
     public:
         NamedValueVisitorImpl(visitor_callback a_callback, void* an_extra):
             callback(a_callback), extra(an_extra) {};
         virtual void visit(const libecap::Name &name, const libecap::Area &value) {
-            callback(to_rust_name(name), value.start, value.size, extra);
+            callback(to_rust_name(name), to_rust_area(value), extra);
         }
         visitor_callback callback;
         void* extra;
