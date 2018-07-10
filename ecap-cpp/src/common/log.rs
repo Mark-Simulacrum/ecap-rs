@@ -1,33 +1,44 @@
 use ecap::common::log::{self, LogVerbosity};
 use ffi;
+use host::CppHost;
 use libc::c_char;
 use std::fmt;
 use std::ptr::NonNull;
 
 impl log::DebugStream for DebugStream {}
 
-pub struct DebugStream(Option<NonNull<Ostream>>);
+pub struct DebugStream {
+    stream: *mut ffi::Ostream,
+    host: *const ffi::Host,
+}
 
 impl DebugStream {
-    pub fn new() -> Self {
+    // XXX: This should technically take &'a CppHost and bind that lifetime to itself,
+    // but we need GATs for that.
+    pub fn from_host(host: &CppHost, verbosity: LogVerbosity) -> Option<Self> {
         unsafe {
-            let verbosity = LogVerbosity::new();
-            let ptr = ffi::rust_shim_host_open_debug(ffi::LogVerbosity(verbosity.mask()));
-            if ptr.is_null() {
-                DebugStream(None)
+            let stream =
+                ffi::rust_shim_host_open_debug(host.as_ptr(), ffi::LogVerbosity(verbosity.mask()));
+            if stream.is_null() {
+                None
             } else {
-                DebugStream(Some(NonNull::from(Ostream::from_ptr_mut(ptr))))
+                Some(DebugStream {
+                    stream: stream,
+                    host: host.as_ptr(),
+                })
             }
         }
+    }
+
+    fn as_ptr_mut(&mut self) -> *mut ffi::Ostream {
+        self.stream
     }
 }
 
 impl fmt::Write for DebugStream {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        if let Some(mut stream) = self.0 {
-            unsafe {
-                stream.as_mut().write_str(s)?;
-            }
+        unsafe {
+            ffi::rust_shim_ostream_write(self.as_ptr_mut(), s.as_ptr() as *const c_char, s.len());
         }
         Ok(())
     }
@@ -35,10 +46,8 @@ impl fmt::Write for DebugStream {
 
 impl Drop for DebugStream {
     fn drop(&mut self) {
-        if let Some(mut stream) = self.0.take() {
-            unsafe {
-                ffi::rust_shim_host_close_debug(stream.as_mut().as_ptr_mut());
-            }
+        unsafe {
+            ffi::rust_shim_host_close_debug(self.host, self.stream);
         }
     }
 }

@@ -1,6 +1,7 @@
 #define LIBECAP_VERSION "1.0.1"
 
 #include <iostream>
+#include <sstream>
 #include <libecap/common/forward.h>
 #include <libecap/common/registry.h>
 #include <libecap/common/errors.h>
@@ -182,20 +183,34 @@ rust_string to_rust_string(const std::string &s) {
 }
 
 // TODO: This will copy the std::string returned by uri
-extern "C" rust_string rust_shim_host_uri() {
-    return to_rust_string(libecap::MyHost().uri());
+extern "C" rust_string rust_shim_host_uri(const libecap::host::Host *host) {
+    return to_rust_string(host->uri());
 }
 
-extern "C" void *rust_shim_host_open_debug(RustLogVerbosity verbosity) {
-    return libecap::MyHost().openDebug(libecap::LogVerbosity(verbosity.mask));
+extern "C" rust_string rust_shim_host_describe(const libecap::host::Host *host) {
+    std::ostringstream out;
+    host->describe(out);
+    return to_rust_string(out.str());
 }
 
-extern "C" void rust_shim_host_close_debug(std::ostream* stream) {
-    libecap::MyHost().closeDebug(stream);
+extern "C" void *rust_shim_host_open_debug(libecap::host::Host *host, RustLogVerbosity verbosity) {
+    return host->openDebug(libecap::LogVerbosity(verbosity.mask));
+}
+
+extern "C" void rust_shim_host_close_debug(libecap::host::Host *host, std::ostream* stream) {
+    host->closeDebug(stream);
 }
 
 extern "C" void rust_shim_ostream_write(std::ostream *stream, char *buf, size_t length) {
     stream->write(buf, length);
+}
+
+extern "C" rust_shared_ptr_message rust_shim_host_new_request(libecap::host::Host *host) {
+    return to_rust_shared_ptr_message(host->newRequest());
+}
+
+extern "C" rust_shared_ptr_message rust_shim_host_new_response(libecap::host::Host *host) {
+    return to_rust_shared_ptr_message(host->newResponse());
 }
 
 extern "C" libecap::host::Host &rust_host() {

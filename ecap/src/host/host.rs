@@ -45,7 +45,7 @@ where
     /// type for ease of use.
     ///
     /// XXX: Abstract better over debug stream, avoiding allocation
-    fn open_debug(&mut self, verbosity: LogVerbosity) -> Self::DebugStream;
+    fn open_debug(&self, verbosity: LogVerbosity) -> Option<Self::DebugStream>;
 
     /// Close a debug stream.
     ///
@@ -53,7 +53,7 @@ where
     /// prepend a "header" to the stream.
     ///
     /// XXX: Abstract better over debug stream, avoiding allocation
-    fn close_debug(&mut self, stream: Self::DebugStream);
+    fn close_debug(&self, stream: Self::DebugStream);
 
     /// Create a fresh request.
     ///

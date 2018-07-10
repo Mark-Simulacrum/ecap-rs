@@ -195,9 +195,12 @@ extern "C" {
     pub fn options_visit(options: *const Options, cb: VisitorCallback, extra: *mut c_void);
 
     pub fn rust_host() -> *const Host;
-    pub fn rust_shim_host_uri() -> CVec;
-    pub fn rust_shim_host_open_debug(verbosity: LogVerbosity) -> *mut Ostream;
-    pub fn rust_shim_host_close_debug(stream: *mut Ostream);
+    pub fn rust_shim_host_uri(host: *const Host) -> CVec;
+    pub fn rust_shim_host_describe(host: *const Host) -> CVec;
+    pub fn rust_shim_host_open_debug(host: *const Host, verbosity: LogVerbosity) -> *mut Ostream;
+    pub fn rust_shim_host_close_debug(host: *const Host, stream: *mut Ostream);
+    pub fn rust_shim_host_new_request(host: *const Host) -> SharedPtrMessage;
+    pub fn rust_shim_host_new_response(host: *const Host) -> SharedPtrMessage;
     pub fn rust_shim_ostream_write(stream: *mut Ostream, buf: *const c_char, len: size_t);
 
     pub fn rust_shim_register_service(service: *mut *mut c_void) -> bool;

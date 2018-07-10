@@ -108,7 +108,7 @@ impl ConcreteMessage<CppHost> for CppMessage {
     type MessageClone = SharedPtrMessage;
 
     fn clone(&self) -> Self::MessageClone {
-        unsafe { SharedPtrMessage(Box::new(ffi::rust_shim_message_clone(self.as_ptr()))) }
+        unsafe { SharedPtrMessage(ffi::rust_shim_message_clone(self.as_ptr())) }
     }
     fn first_line_mut(&mut self) -> &mut CppFirstLine {
         unimplemented!()
@@ -190,12 +190,11 @@ impl ConcreteMessage<dyn ErasedHost> for CppMessage {
     }
 }
 
-pub struct SharedPtrMessage(pub Box<ffi::SharedPtrMessage>);
+pub struct SharedPtrMessage(pub ffi::SharedPtrMessage);
 
 impl SharedPtrMessage {
     pub fn as_ptr(&self) -> *const ffi::SharedPtrMessage {
-        let f: &ffi::SharedPtrMessage = &*self.0;
-        f
+        &self.0
     }
 }
 
@@ -203,7 +202,7 @@ impl ops::Deref for SharedPtrMessage {
     type Target = CppMessage;
     fn deref(&self) -> &CppMessage {
         unsafe {
-            let msg = ffi::rust_shim_shared_ptr_message_ref(&*self.0);
+            let msg = ffi::rust_shim_shared_ptr_message_ref(&self.0);
 
             CppMessage::from_ptr(msg)
         }
@@ -213,7 +212,7 @@ impl ops::Deref for SharedPtrMessage {
 impl ops::DerefMut for SharedPtrMessage {
     fn deref_mut(&mut self) -> &mut CppMessage {
         unsafe {
-            let msg = ffi::rust_shim_shared_ptr_message_ref_mut(&mut *self.0);
+            let msg = ffi::rust_shim_shared_ptr_message_ref_mut(&mut self.0);
             CppMessage::from_ptr_mut(msg)
         }
     }
@@ -222,7 +221,7 @@ impl ops::DerefMut for SharedPtrMessage {
 impl Drop for SharedPtrMessage {
     fn drop(&mut self) {
         unsafe {
-            ffi::rust_shim_shared_ptr_message_free(&mut *self.0);
+            ffi::rust_shim_shared_ptr_message_free(&mut self.0);
         }
     }
 }
