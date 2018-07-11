@@ -99,6 +99,22 @@ libecap::Name from_rust_name(const rust_name *name) {
     return *reinterpret_cast<libecap::Name*>(&cpp);
 }
 
+extern "C" void rust_area_free(rust_area *area) {
+    libecap::Area::Details& details =
+        reinterpret_cast<libecap::Area::Details&>(area->details);
+    details.reset();
+}
+
+libecap::Area from_rust_area(rust_area area) {
+    libecap::Area foo;
+    foo.start = area.buf;
+    foo.size = area.size;
+    auto details = new (&foo.details) libecap::Area::Details;
+    *details = reinterpret_cast<libecap::Area::Details&>(area.details);
+    rust_area_free(&area);
+    return foo;
+}
+
 rust_area to_rust_area(libecap::Area area) {
     rust_area foo;
     foo.size = area.size;
@@ -218,29 +234,11 @@ extern "C" libecap::host::Host &rust_host() {
 }
 
 extern "C" rust_area rust_area_new() {
-    auto area = libecap::Area();
-    rust_area foo;
-    foo.size = area.size;
-    foo.buf = area.start;
-    auto details = new (&foo.details) libecap::Area::Details;
-    *details = area.details;
-    return foo;
+    return to_rust_area(libecap::Area());
 }
 
 extern "C" rust_area rust_area_new_slice(char *buf, size_t len) {
-    auto area = libecap::Area::FromTempBuffer(buf, len);
-    rust_area foo;
-    foo.size = area.size;
-    foo.buf = area.start;
-    auto details = new (&foo.details) libecap::Area::Details;
-    *details = area.details;
-    return foo;
-}
-
-extern "C" void rust_area_free(rust_area *area) {
-    libecap::Area::Details& details =
-        reinterpret_cast<libecap::Area::Details&>(area->details);
-    details.reset();
+    return to_rust_area(libecap::Area::FromTempBuffer(buf, len));
 }
 
 namespace Adapter { // not required, but adds clarity
@@ -338,13 +336,7 @@ extern "C" rust_area options_option(const libecap::Options *options, const rust_
     // XXX: unavoidable copy due to Name's API
     libecap::Name name = from_rust_name(rname);
     libecap::Area area = options->option(name);
-    // XXX: copying areas
-    rust_area foo;
-    foo.size = area.size;
-    foo.buf = area.start;
-    auto details = new (&foo.details) libecap::Area::Details;
-    *details = area.details;
-    return foo;
+    return to_rust_area(area);
 }
 
 typedef void (*visitor_callback)(const rust_name, const rust_area, void*);
@@ -432,13 +424,7 @@ void Adapter::Xaction::visitEachOption(libecap::NamedValueVisitor &) const {
 
 libecap::Area Adapter::Xaction::abContent(libecap::size_type offset, libecap::size_type size) {
     rust_area rarea = ::rust_xaction_ab_content(rust_xaction, hostx, offset, size);
-    libecap::Area area;
-    area.start = rarea.buf;
-    area.size = rarea.size;
-    auto details = new (&area.details) libecap::Area::Details;
-    *details = reinterpret_cast<libecap::Area::Details&>(rarea.details);
-    rust_area_free(&rarea);
-    return area;
+    return from_rust_area(rarea);
 }
 
 void Adapter::Xaction::abContentShift(libecap::size_type size) {
@@ -491,12 +477,7 @@ extern "C" void rust_shim_host_xaction_adaptation_delayed(libecap::host::Xaction
 
 extern "C" rust_area rust_shim_host_xaction_vb_content(libecap::host::Xaction *xaction, size_t offset, size_t size) {
     libecap::Area area = xaction->vbContent(offset, size);
-    rust_area foo;
-    foo.size = area.size;
-    foo.buf = area.start;
-    auto details = new (&foo.details) libecap::Area::Details;
-    *details = area.details;
-    return foo;
+    return to_rust_area(area);
 }
 
 extern "C" void rust_shim_host_xaction_vb_content_shift(libecap::host::Xaction *xaction, size_t size) {
