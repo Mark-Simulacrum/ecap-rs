@@ -141,7 +141,7 @@ impl<H: host::Host + ?Sized> Transaction<H> for PassthruTransaction {
     where
         H::TransactionRef: 'a,
     {
-        assert_eq!(self.sending, State::Complete);
+        self.sending = State::Complete;
         hostx.virgin_body_stop_making();
     }
     fn adapted_body_pause<'a>(&mut self, _host: &'a mut H::TransactionRef)
@@ -178,7 +178,6 @@ impl<H: host::Host + ?Sized> Transaction<H> for PassthruTransaction {
         H::TransactionRef: 'a,
     {
         assert_eq!(self.receiving, State::On);
-        host.virgin_body_stop_making();
         self.receiving = State::Complete;
         host.adapted_body_content_done(at_end);
     }
