@@ -1,6 +1,8 @@
 use ffi;
 use libc::{c_char, c_void, size_t};
-use std::{mem, slice};
+use std::mem::ManuallyDrop;
+use std::panic;
+use std::{mem, ptr, slice};
 
 use ecap::common::{Area, Delay};
 

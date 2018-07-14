@@ -12,3 +12,5 @@ erased-ecap = { path = "../erased-ecap" }
 ecap-sys = { path = "../ecap-sys" }
 ecap-common-link = { path = "../ecap-common-link" }
 libc = "0.2"
+crossbeam = "0.3"
+lazy_static = "1"

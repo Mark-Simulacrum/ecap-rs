@@ -1,10 +1,13 @@
-#![feature(used)]
+#![feature(unwind_attributes, used)]
 #![allow(unused)]
+extern crate crossbeam;
 extern crate ecap;
 extern crate ecap_common_link;
 extern crate ecap_sys as ffi;
 extern crate erased_ecap;
 extern crate libc;
+#[macro_use]
+extern crate lazy_static;
 
 macro_rules! foreign_ref {
     (pub struct $name:ident($cname:path)) => {
@@ -47,8 +50,9 @@ pub mod host;
 
 use ecap::adapter::Service;
 use ecap::host::Host;
-use libc::c_void;
+use libc::{c_int, c_void};
 use std::any::Any;
+use std::ptr;
 
 use ecap::Translator;
 use erased_ecap::adapter::Service as ErasedService;
@@ -77,7 +81,95 @@ impl Translator for CppTranslator {
     }
 }
 
+use crossbeam::sync::TreiberStack;
+lazy_static! {
+    static ref PANICS: TreiberStack<PanicPayload> = TreiberStack::new();
+}
+
+#[derive(Debug)]
+struct PanicLocation {
+    file: String,
+    line: u32,
+    column: u32,
+}
+
+#[derive(Debug)]
+struct PanicPayload {
+    is_exception: bool,
+    payload: String,
+    location: Option<PanicLocation>,
+}
+
+use std::panic::{self, PanicInfo};
+fn panic_hook(info: &PanicInfo) {
+    let mut is_exception = false;
+    let payload = if let Some(s) = info.payload().downcast_ref::<String>() {
+        s.clone()
+    } else if let Some(s) = info.payload().downcast_ref::<&'static str>() {
+        String::from(*s)
+    } else if let Some(s) = info.payload().downcast_ref::<CppError>() {
+        is_exception = true;
+        String::from("C++ exception")
+    } else {
+        String::from("unknown payload")
+    };
+    let ret = PanicPayload {
+        payload: payload,
+        is_exception,
+        location: info.location().map(|l| PanicLocation {
+            file: l.file().to_owned(),
+            line: l.line(),
+            column: l.column(),
+        }),
+    };
+    PANICS.push(ret);
+}
+
+impl PanicPayload {
+    fn into_ffi(self) -> ffi::Panic {
+        ffi::Panic {
+            is_exception: self.is_exception,
+            message: self.payload.into(),
+            location: self.location
+                .map(|l| ffi::PanicLocation {
+                    file: l.file.into(),
+                    line: l.line as c_int,
+                    column: l.column as c_int,
+                })
+                .unwrap_or(ffi::PanicLocation {
+                    file: ffi::CVec::from(vec![]),
+                    line: 0,
+                    column: 0,
+                }),
+        }
+    }
+}
+
+// This is intended to signal in a panic that the error occurred in C++...
+struct CppError;
+
+#[unwind(aborts)]
+#[no_mangle]
+pub unsafe extern "C" fn rust_panic_pop(panic: *mut ffi::Panic) -> bool {
+    let next = match PANICS.try_pop() {
+        Some(n) => n,
+        None => return false,
+    };
+
+    ptr::write(panic, next.into_ffi());
+
+    true
+}
+
+#[unwind(aborts)]
+#[no_mangle]
+pub extern "C" fn rust_panic_free(panic: ffi::Panic) {
+    let _ = panic.message.to_rust();
+    let _ = panic.location.file.to_rust();
+}
+
 pub extern "C" fn on_load() {
+    panic::set_hook(Box::new(panic_hook));
     ecap_common_link::register_erased_translator(CppTranslator);
 }
 

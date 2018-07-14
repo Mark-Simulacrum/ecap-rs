@@ -8,6 +8,25 @@ use std::{mem, ptr};
 use libc::{c_char, c_int, c_void, size_t};
 
 #[repr(C)]
+pub struct Panic {
+    pub is_exception: bool,
+    pub message: CVec,
+    pub location: PanicLocation,
+}
+
+#[repr(C)]
+pub struct PanicLocation {
+    pub file: CVec,
+    pub line: c_int,
+    pub column: c_int,
+}
+
+#[repr(C)]
+pub struct ExceptionPtr {
+    ptr: *mut c_void,
+}
+
+#[repr(C)]
 #[derive(Debug)]
 pub struct Version {
     pub major: c_int,

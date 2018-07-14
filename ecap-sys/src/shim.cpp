@@ -20,6 +20,11 @@
 #include <libecap/common/delay.h>
 #include <sys/time.h>
 #include <climits>
+#include <exception>
+#include <vector>
+#include <libecap/common/errors.h>
+
+static std::vector<std::exception_ptr> CURRENT_EXCEPTIONS = {};
 
 struct RustLogVerbosity {
     size_t mask;
@@ -54,6 +59,22 @@ struct rust_area {
     size_t size;
     const char *buf;
     rust_details__ details;
+};
+
+struct panic_location {
+    rust_string file;
+    int line;
+    int column;
+};
+
+struct rust_panic {
+    bool is_exception;
+    rust_string message;
+    panic_location location;
+};
+
+struct rust_exception_ptr {
+    void *ptr;
 };
 
 // We'll be memcpying the raw bytes in here to preserve them across the C boundary
@@ -422,6 +443,36 @@ void Adapter::Xaction::visitEachOption(libecap::NamedValueVisitor &) const {
 	// this transaction has no meta-information to pass to the visitor
 }
 
+template<typename R, typename F>
+R call_rust_maybe_throw(F f) {
+    R ret;
+    bool res = f(&ret);
+    if (res) {
+        return ret;
+    } else {
+        rust_panic panic;
+        if (rust_panic_pop(&panic)) {
+            std::string message = std::string(panic.message.buf, panic.message.size);
+            std::string file = std::string(panic.location.file.buf, panic.location.file.size);
+            std::cerr << "recv exception from rust: " << message << std::endl;
+            bool cpp_except = panic.is_exception;
+            int line = panic.location.line;
+            rust_panic_free(panic);
+            if (cpp_except) {
+                std::cerr << "recv-ed exception is a c++ exception" << std::endl;
+                Must(CURRENT_EXCEPTIONS.size() >= 1);
+                auto ex = CURRENT_EXCEPTIONS.back();
+                CURRENT_EXCEPTIONS.pop_back();
+                std::rethrow_exception(ex);
+            } else {
+                throw libecap::TextException(message, file.c_str(), line);
+            }
+        } else {
+            throw TextExceptionHere("missing panic handler action");
+        }
+    }
+}
+
 libecap::Area Adapter::Xaction::abContent(libecap::size_type offset, libecap::size_type size) {
     rust_area rarea = ::rust_xaction_ab_content(rust_xaction, hostx, offset, size);
     return from_rust_area(rarea);
@@ -475,9 +526,26 @@ extern "C" void rust_shim_host_xaction_adaptation_delayed(libecap::host::Xaction
     xaction->adaptationDelayed(libecap::Delay(std::string(state, len), progress));
 }
 
-extern "C" rust_area rust_shim_host_xaction_vb_content(libecap::host::Xaction *xaction, size_t offset, size_t size) {
-    libecap::Area area = xaction->vbContent(offset, size);
-    return to_rust_area(area);
+template<typename F>
+bool call_cpp_catch_exception(F f) {
+    try {
+        f();
+        return true;
+    } catch (std::exception const &e) {
+        std::cerr << "caught an exception in C++ shim: " << e.what() << std::endl;
+        CURRENT_EXCEPTIONS.push_back(std::current_exception());
+        return false;
+    } catch (...) {
+        return false;
+    }
+}
+
+extern "C" bool rust_shim_host_xaction_vb_content(
+    libecap::host::Xaction *xaction, size_t offset, size_t size, rust_area *out) {
+    return call_cpp_catch_exception([&] () {
+        libecap::Area area = xaction->vbContent(offset, size);
+        *out = to_rust_area(area);
+    });
 }
 
 extern "C" void rust_shim_host_xaction_vb_content_shift(libecap::host::Xaction *xaction, size_t size) {
