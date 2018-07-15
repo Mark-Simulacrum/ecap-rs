@@ -1,3 +1,5 @@
+#![feature(unwind_attributes)]
+
 #[macro_use]
 extern crate lazy_static;
 extern crate ecap;
@@ -13,25 +15,20 @@ lazy_static! {
 }
 
 #[no_mangle]
-pub extern "C" fn register_service(service: *mut u32) {
-    let service = unsafe { Box::from_raw(service as *mut ErasedService) };
-
+#[unwind(allowed)]
+pub fn register_service(service: ErasedService) {
     let translators = REGISTERED_TRANSLATORS.lock().unwrap();
     if let Some(translator) = translators.first() {
-        translator.register_service(*service);
+        translator.register_service(service);
     } else {
         let mut adapters = REGISTERED_ADAPTERS.lock().unwrap();
-        adapters.push(*service);
+        adapters.push(service);
     }
 }
 
 #[no_mangle]
-pub extern "C" fn register_translator(translator: *mut u32) {
-    unsafe {
-        let translator: Box<ErasedTranslatorS> =
-            Box::from_raw(translator as *mut ErasedTranslatorS);
-
-        let mut translators = REGISTERED_TRANSLATORS.lock().unwrap();
-        translators.push(*translator);
-    }
+#[unwind(allowed)]
+pub fn register_translator(translator: ErasedTranslatorS) {
+    let mut translators = REGISTERED_TRANSLATORS.lock().unwrap();
+    translators.push(translator);
 }

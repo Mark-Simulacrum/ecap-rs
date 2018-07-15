@@ -1,3 +1,5 @@
+#![feature(unwind_attributes)]
+
 extern crate ecap;
 extern crate erased_ecap;
 
@@ -8,11 +10,12 @@ use erased_ecap::ErasedTranslatorS;
 
 use ecap::adapter::Service;
 
-mod ffi {
-    extern "C" {
-        pub fn register_service(service: *mut u32);
-        pub fn register_translator(translator: *mut u32);
-    }
+#[allow(improper_ctypes)]
+extern "Rust" {
+    #[unwind(allowed)]
+    fn register_service(service: ErasedService);
+    #[unwind(allowed)]
+    fn register_translator(translator: ErasedTranslatorS);
 }
 
 pub fn register_erased_service<T: Service<dyn Host>>(service: T)
@@ -21,13 +24,13 @@ where
 {
     unsafe {
         let service = ErasedService::new(service);
-        ffi::register_service(Box::into_raw(Box::new(service)) as *mut u32);
+        register_service(service);
     }
 }
 
 pub fn register_erased_translator<T: 'static + ErasedTranslator>(translator: T) {
     unsafe {
         let translator = ErasedTranslatorS::new(translator);
-        ffi::register_translator(Box::into_raw(Box::new(translator)) as *mut u32);
+        register_translator(translator);
     }
 }

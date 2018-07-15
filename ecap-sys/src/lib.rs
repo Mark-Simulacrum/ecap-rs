@@ -1,4 +1,4 @@
-#![feature(extern_types)]
+#![feature(unwind_attributes, extern_types)]
 
 extern crate libc;
 
@@ -125,6 +125,7 @@ impl Drop for CVec {
 }
 
 #[no_mangle]
+#[unwind(aborts)]
 pub unsafe extern "C" fn rust_new_string(buf: *const c_char, len: size_t) -> CVec {
     let mut data = Vec::with_capacity(len);
     ptr::copy_nonoverlapping(buf as *const u8, data.as_mut_ptr(), len);
@@ -138,6 +139,7 @@ pub unsafe extern "C" fn rust_new_string(buf: *const c_char, len: size_t) -> CVe
 }
 
 #[no_mangle]
+#[unwind(aborts)]
 pub unsafe extern "C" fn rust_free_string(s: CVec) {
     mem::drop(s);
 }
@@ -180,37 +182,53 @@ extern "C" {
         extra: *const c_void,
     );
 
-    pub fn rust_shim_host_xaction_virgin(xaction: *mut HostTransaction) -> *mut Message;
-    pub fn rust_shim_host_xaction_cause(xaction: *mut HostTransaction) -> *const Message;
-    pub fn rust_shim_host_xaction_adapted(xaction: *mut HostTransaction) -> *mut Message;
-    pub fn rust_shim_host_xaction_use_virgin(xaction: *mut HostTransaction);
+    pub fn rust_shim_host_xaction_virgin(
+        xaction: *mut HostTransaction,
+        out: *mut *mut Message,
+    ) -> bool;
+    pub fn rust_shim_host_xaction_cause(
+        xaction: *mut HostTransaction,
+        out: *mut *const Message,
+    ) -> bool;
+    pub fn rust_shim_host_xaction_adapted(
+        xaction: *mut HostTransaction,
+        out: *mut *mut Message,
+    ) -> bool;
+    pub fn rust_shim_host_xaction_use_virgin(xaction: *mut HostTransaction) -> bool;
     pub fn rust_shim_host_xaction_use_adapted(
         xaction: *mut HostTransaction,
         msg: *const SharedPtrMessage,
-    );
-    pub fn rust_shim_host_xaction_block_virgin(xaction: *mut HostTransaction);
+    ) -> bool;
+    pub fn rust_shim_host_xaction_block_virgin(xaction: *mut HostTransaction) -> bool;
     pub fn rust_shim_host_xaction_adaptation_delayed(
         xaction: *mut HostTransaction,
         delay_state: *const c_char,
         delay_state_len: size_t,
         progress: f64,
-    );
-    pub fn rust_shim_host_xaction_adaptation_aborted(xaction: *mut HostTransaction);
-    pub fn rust_shim_host_xaction_resume(xaction: *mut HostTransaction);
-    pub fn rust_shim_host_xaction_vb_discard(xaction: *mut HostTransaction);
-    pub fn rust_shim_host_xaction_vb_make(xaction: *mut HostTransaction);
-    pub fn rust_shim_host_xaction_vb_stop_making(xaction: *mut HostTransaction);
-    pub fn rust_shim_host_xaction_vb_make_more(xaction: *mut HostTransaction);
-    pub fn rust_shim_host_xaction_vb_pause(xaction: *mut HostTransaction);
-    pub fn rust_shim_host_xaction_vb_resume(xaction: *mut HostTransaction);
-    pub fn rust_shim_host_xaction_note_ab_content_available(xaction: *mut HostTransaction);
-    pub fn rust_shim_host_xaction_note_ab_content_done(xaction: *mut HostTransaction, end: bool);
+    ) -> bool;
+    pub fn rust_shim_host_xaction_adaptation_aborted(xaction: *mut HostTransaction) -> bool;
+    pub fn rust_shim_host_xaction_resume(xaction: *mut HostTransaction) -> bool;
+    pub fn rust_shim_host_xaction_vb_discard(xaction: *mut HostTransaction) -> bool;
+    pub fn rust_shim_host_xaction_vb_make(xaction: *mut HostTransaction) -> bool;
+    pub fn rust_shim_host_xaction_vb_stop_making(xaction: *mut HostTransaction) -> bool;
+    pub fn rust_shim_host_xaction_vb_make_more(xaction: *mut HostTransaction) -> bool;
+    pub fn rust_shim_host_xaction_vb_pause(xaction: *mut HostTransaction) -> bool;
+    pub fn rust_shim_host_xaction_vb_resume(xaction: *mut HostTransaction) -> bool;
+    pub fn rust_shim_host_xaction_note_ab_content_available(xaction: *mut HostTransaction) -> bool;
+    pub fn rust_shim_host_xaction_note_ab_content_done(
+        xaction: *mut HostTransaction,
+        end: bool,
+    ) -> bool;
     pub fn rust_shim_host_xaction_vb_content(
         xaction: *mut HostTransaction,
         offset: size_t,
         size: size_t,
-    ) -> Area;
-    pub fn rust_shim_host_xaction_vb_content_shift(xaction: *mut HostTransaction, size: size_t);
+        out: *mut Area,
+    ) -> bool;
+    pub fn rust_shim_host_xaction_vb_content_shift(
+        xaction: *mut HostTransaction,
+        size: size_t,
+    ) -> bool;
 
     pub fn rust_area_new() -> Area;
     pub fn rust_area_new_slice(buf: *const c_char, len: size_t) -> Area;

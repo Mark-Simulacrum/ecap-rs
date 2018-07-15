@@ -148,9 +148,10 @@ impl PanicPayload {
 // This is intended to signal in a panic that the error occurred in C++...
 struct CppError;
 
-#[unwind(aborts)]
 #[no_mangle]
+#[unwind(aborts)]
 pub unsafe extern "C" fn rust_panic_pop(panic: *mut ffi::Panic) -> bool {
+    // This code should be panic-free as they will not be properly handled by it.
     let next = match PANICS.try_pop() {
         Some(n) => n,
         None => return false,
@@ -161,11 +162,48 @@ pub unsafe extern "C" fn rust_panic_pop(panic: *mut ffi::Panic) -> bool {
     true
 }
 
-#[unwind(aborts)]
 #[no_mangle]
+#[unwind(aborts)]
 pub extern "C" fn rust_panic_free(panic: ffi::Panic) {
+    // We are just dropping vectors here which should be panic-free; this is std
+    // code, not user code.
     let _ = panic.message.to_rust();
     let _ = panic.location.file.to_rust();
+}
+
+#[must_use]
+pub unsafe fn ffi_unwind<F, R>(out: *mut R, f: F) -> bool
+where
+    F: FnOnce() -> R + panic::UnwindSafe,
+{
+    match panic::catch_unwind(f) {
+        Ok(res) => {
+            println!("encountered sucess in ffi_unwind");
+            ptr::write(out, res);
+            true
+        }
+        Err(x) => {
+            println!("encountered panic in ffi_unwind::catch_unwind");
+            false
+        }
+    }
+}
+
+use std::mem::{self, ManuallyDrop};
+
+pub fn call_ffi_maybe_panic<F, R>(f: F) -> R
+where
+    F: FnOnce(&mut R) -> bool,
+{
+    unsafe {
+        let mut raw: ManuallyDrop<R> = ManuallyDrop::new(mem::uninitialized());
+        let res = f(&mut *raw);
+        if res {
+            ManuallyDrop::into_inner(raw)
+        } else {
+            panic!(::CppError);
+        }
+    }
 }
 
 pub extern "C" fn on_load() {

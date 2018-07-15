@@ -181,37 +181,83 @@ extern "C" void rust_shim_shared_ptr_message_free(libecap::shared_ptr<libecap::M
 extern "C" {
     rust_string rust_new_string(const char*, size_t);
     void rust_free_string(rust_string);
-    void rust_service_describe(const void **, const void *);
-    rust_string rust_service_uri(const void **);
-    rust_string rust_service_tag(const void **);
-    void rust_service_start(const void **);
-    void rust_service_stop(const void **);
-    void rust_service_retire(const void **);
+    bool rust_service_describe(const void **, const void *);
+    bool rust_service_uri(const void **, rust_string *);
+    bool rust_service_tag(const void **, rust_string *);
+    bool rust_service_start(const void **);
+    bool rust_service_stop(const void **);
+    bool rust_service_retire(const void **);
     bool rust_service_is_async(const void **);
-    void rust_service_resume(const void **);
-    void rust_service_suspend(const void **, timeval *);
-    void rust_service_configure(const void **, const libecap::Options *);
-    void rust_service_reconfigure(const void **, const libecap::Options *);
-    bool rust_service_wants_url(const void **, const char *);
+    bool rust_service_resume(const void **);
+    bool rust_service_suspend(const void **, timeval *);
+    bool rust_service_configure(const void **, const libecap::Options *);
+    bool rust_service_reconfigure(const void **, const libecap::Options *);
+    bool rust_service_wants_url(const void **, const char *, bool *);
 
-    void rust_xaction_start(const void *, void *);
-    void rust_xaction_stop(const void *, void *);
-    void rust_xaction_resume(const void *, void *);
-    void rust_xaction_ab_discard(const void *, void *);
-    void rust_xaction_ab_make(const void *, void *);
-    void rust_xaction_ab_make_more(const void *, void *);
-    void rust_xaction_ab_stop_making(const void *, void *);
-    void rust_xaction_ab_pause(const void *, void *);
-    void rust_xaction_ab_resume(const void *, void *);
-    rust_area rust_xaction_ab_content(const void *, void *, size_t, size_t);
-    void rust_xaction_ab_content_shift(const void *, void *, size_t);
+    bool rust_xaction_start(const void *, void *);
+    bool rust_xaction_stop(const void *, void *);
+    bool rust_xaction_resume(const void *, void *);
+    bool rust_xaction_ab_discard(const void *, void *);
+    bool rust_xaction_ab_make(const void *, void *);
+    bool rust_xaction_ab_make_more(const void *, void *);
+    bool rust_xaction_ab_stop_making(const void *, void *);
+    bool rust_xaction_ab_pause(const void *, void *);
+    bool rust_xaction_ab_resume(const void *, void *);
+    bool rust_xaction_ab_content(const void *, void *, size_t, size_t, rust_area *);
+    bool rust_xaction_ab_content_shift(const void *, void *, size_t);
 
-    void rust_xaction_vb_content_done(const void *, void *, bool);
-    void rust_xaction_vb_content_available(const void *, void *);
+    bool rust_xaction_vb_content_done(const void *, void *, bool);
+    bool rust_xaction_vb_content_available(const void *, void *);
 
-    void rust_service_free(const void **);
-    const void *rust_xaction_create(const void **, void *);
-    void rust_xaction_free(const void *);
+    bool rust_service_free(const void **);
+    bool rust_xaction_create(const void **, void *, const void **);
+    bool rust_xaction_free(const void *);
+
+    bool rust_panic_pop(rust_panic *);
+    void rust_panic_free(rust_panic );
+}
+
+template<typename F>
+bool call_cpp_catch_exception(F f) {
+    try {
+        f();
+        return true;
+    } catch (std::exception const &e) {
+        std::cerr << "caught an exception in C++ shim: " << e.what() << std::endl;
+        CURRENT_EXCEPTIONS.push_back(std::current_exception());
+        return false;
+    } catch (...) {
+        return false;
+    }
+}
+
+template<typename F>
+void call_rust_maybe_throw(F f) {
+    bool res = f();
+    if (res) {
+        return;
+    } else {
+        rust_panic panic;
+        if (rust_panic_pop(&panic)) {
+            std::string message = std::string(panic.message.buf, panic.message.size);
+            std::string file = std::string(panic.location.file.buf, panic.location.file.size);
+            std::cerr << "recv exception from rust: " << message << std::endl;
+            bool cpp_except = panic.is_exception;
+            int line = panic.location.line;
+            rust_panic_free(panic);
+            if (cpp_except) {
+                std::cerr << "recv-ed exception is a c++ exception" << std::endl;
+                Must(CURRENT_EXCEPTIONS.size() >= 1);
+                auto ex = CURRENT_EXCEPTIONS.back();
+                CURRENT_EXCEPTIONS.pop_back();
+                std::rethrow_exception(ex);
+            } else {
+                throw libecap::TextException(message, file.c_str(), line);
+            }
+        } else {
+            throw TextExceptionHere("missing panic handler action");
+        }
+    }
 }
 
 rust_string to_rust_string(const std::string &s) {
@@ -335,21 +381,29 @@ class Xaction: public libecap::adapter::Xaction {
 } // namespace Adapter
 
 std::string Adapter::Service::uri() const {
-    rust_string s = ::rust_service_uri(rust_service);
+    rust_string s;
+    call_rust_maybe_throw([&] {
+        return ::rust_service_uri(rust_service, &s);
+    });
     std::string ret = std::string(s.buf, s.size);
     ::rust_free_string(s);
     return ret;
 }
 
 std::string Adapter::Service::tag() const {
-    rust_string s = ::rust_service_tag(rust_service);
+    rust_string s;
+    call_rust_maybe_throw([&] () {
+        return ::rust_service_tag(rust_service, &s);
+    });
     std::string ret = std::string(s.buf, s.size);
     ::rust_free_string(s);
     return ret;
 }
 
 void Adapter::Service::describe(std::ostream &os) const {
-    ::rust_service_describe(rust_service, &os);
+    call_rust_maybe_throw([&] () {
+        return ::rust_service_describe(rust_service, &os);
+    });
 }
 
 extern "C" rust_area options_option(const libecap::Options *options, const rust_name* rname) {
@@ -394,29 +448,43 @@ void Adapter::Service::reconfigure(const libecap::Options &options) {
 
 void Adapter::Service::start() {
 	libecap::adapter::Service::start();
-	rust_service_start(rust_service);
+	call_rust_maybe_throw([&] () {
+        return rust_service_start(rust_service);
+    });
 }
 
 void Adapter::Service::suspend(timeval &delay) {
-	rust_service_suspend(rust_service, &delay);
+	call_rust_maybe_throw([&] () {
+        return rust_service_suspend(rust_service, &delay);
+    });
 }
 
 void Adapter::Service::stop() {
-	rust_service_stop(rust_service);
+	call_rust_maybe_throw([&] () {
+        return rust_service_stop(rust_service);
+    });
 	libecap::adapter::Service::stop();
 }
 
 void Adapter::Service::resume() {
-	rust_service_resume(rust_service);
+	call_rust_maybe_throw([&] () {
+        return rust_service_resume(rust_service);
+    });
 	libecap::adapter::Service::stop();
 }
 
 void Adapter::Service::retire() {
-	rust_service_retire(rust_service);
+    call_rust_maybe_throw([&] () {
+        return rust_service_retire(rust_service);
+    });
 }
 
 bool Adapter::Service::wantsUrl(const char *url) const {
-    return rust_service_wants_url(rust_service, url);
+    bool out;
+    call_rust_maybe_throw([&] () {
+        return rust_service_wants_url(rust_service, url, &out);
+    });
+    return out;
 }
 
 Adapter::Service::MadeXactionPointer
@@ -427,7 +495,9 @@ Adapter::Service::makeXaction(libecap::host::Xaction *hostx) {
 
 Adapter::Xaction::Xaction(Adapter::Service *service, libecap::host::Xaction *x) {
     hostx = x;
-    rust_xaction = rust_xaction_create(service->rust_service, x);
+    call_rust_maybe_throw([&] () {
+        return ::rust_xaction_create(service->rust_service, x, &rust_xaction);
+    });
 }
 
 Adapter::Xaction::~Xaction() {
@@ -443,43 +513,18 @@ void Adapter::Xaction::visitEachOption(libecap::NamedValueVisitor &) const {
 	// this transaction has no meta-information to pass to the visitor
 }
 
-template<typename R, typename F>
-R call_rust_maybe_throw(F f) {
-    R ret;
-    bool res = f(&ret);
-    if (res) {
-        return ret;
-    } else {
-        rust_panic panic;
-        if (rust_panic_pop(&panic)) {
-            std::string message = std::string(panic.message.buf, panic.message.size);
-            std::string file = std::string(panic.location.file.buf, panic.location.file.size);
-            std::cerr << "recv exception from rust: " << message << std::endl;
-            bool cpp_except = panic.is_exception;
-            int line = panic.location.line;
-            rust_panic_free(panic);
-            if (cpp_except) {
-                std::cerr << "recv-ed exception is a c++ exception" << std::endl;
-                Must(CURRENT_EXCEPTIONS.size() >= 1);
-                auto ex = CURRENT_EXCEPTIONS.back();
-                CURRENT_EXCEPTIONS.pop_back();
-                std::rethrow_exception(ex);
-            } else {
-                throw libecap::TextException(message, file.c_str(), line);
-            }
-        } else {
-            throw TextExceptionHere("missing panic handler action");
-        }
-    }
-}
-
 libecap::Area Adapter::Xaction::abContent(libecap::size_type offset, libecap::size_type size) {
-    rust_area rarea = ::rust_xaction_ab_content(rust_xaction, hostx, offset, size);
+    rust_area rarea;
+    call_rust_maybe_throw([&] () {
+        return ::rust_xaction_ab_content(rust_xaction, hostx, offset, size, &rarea);
+    });
     return from_rust_area(rarea);
 }
 
 void Adapter::Xaction::abContentShift(libecap::size_type size) {
-    ::rust_xaction_ab_content_shift(rust_xaction, hostx, size);
+    call_rust_maybe_throw([&] () {
+        return ::rust_xaction_ab_content_shift(rust_xaction, hostx, size);
+    });
 }
 
 void Adapter::Xaction::noteVbContentDone(bool atEnd) {
@@ -488,7 +533,9 @@ void Adapter::Xaction::noteVbContentDone(bool atEnd) {
 
 #define XACTION_METHOD_SHIM(rname__, cpp_name__) \
     void Adapter::Xaction::cpp_name__() { \
-        ::rname__(rust_xaction, hostx); \
+        call_rust_maybe_throw([&] () {\
+            return ::rname__(rust_xaction, hostx);\
+        });\
     }
 
 XACTION_METHOD_SHIM(rust_xaction_start, start);
@@ -502,10 +549,11 @@ XACTION_METHOD_SHIM(rust_xaction_ab_pause, abPause);
 XACTION_METHOD_SHIM(rust_xaction_ab_resume, abResume);
 XACTION_METHOD_SHIM(rust_xaction_vb_content_available, noteVbContentAvailable);
 
-
 #define XACTION_METHOD_C_SHIM_INTERNAL(cpp_name__, c_name__) \
-    extern "C" void c_name__(libecap::host::Xaction *xaction) { \
-        xaction->cpp_name__();\
+    extern "C" bool c_name__(libecap::host::Xaction *xaction) { \
+        return call_cpp_catch_exception([&] () { \
+            xaction->cpp_name__();\
+        });\
     }
 #define XACTION_METHOD_C_SHIM(cpp_name__, c_name__) \
     XACTION_METHOD_C_SHIM_INTERNAL(cpp_name__, rust_shim_host_xaction_ ## c_name__)
@@ -521,23 +569,11 @@ XACTION_METHOD_C_SHIM(vbResume, vb_resume);
 XACTION_METHOD_C_SHIM(vbMakeMore, vb_make_more);
 XACTION_METHOD_C_SHIM(vbStopMaking, vb_stop_making);
 
-extern "C" void rust_shim_host_xaction_adaptation_delayed(libecap::host::Xaction *xaction,
+extern "C" bool rust_shim_host_xaction_adaptation_delayed(libecap::host::Xaction *xaction,
         const char* state, size_t len, double progress) {
-    xaction->adaptationDelayed(libecap::Delay(std::string(state, len), progress));
-}
-
-template<typename F>
-bool call_cpp_catch_exception(F f) {
-    try {
-        f();
-        return true;
-    } catch (std::exception const &e) {
-        std::cerr << "caught an exception in C++ shim: " << e.what() << std::endl;
-        CURRENT_EXCEPTIONS.push_back(std::current_exception());
-        return false;
-    } catch (...) {
-        return false;
-    }
+    return call_cpp_catch_exception([&] () {
+        xaction->adaptationDelayed(libecap::Delay(std::string(state, len), progress));
+    });
 }
 
 extern "C" bool rust_shim_host_xaction_vb_content(
@@ -548,8 +584,10 @@ extern "C" bool rust_shim_host_xaction_vb_content(
     });
 }
 
-extern "C" void rust_shim_host_xaction_vb_content_shift(libecap::host::Xaction *xaction, size_t size) {
-    xaction->vbContentShift(size);
+extern "C" bool rust_shim_host_xaction_vb_content_shift(libecap::host::Xaction *xaction, size_t size) {
+    return call_cpp_catch_exception([&] () {
+        xaction->vbContentShift(size);
+    });
 }
 
 Adapter::Service::Service(const void **serv) {
@@ -557,7 +595,9 @@ Adapter::Service::Service(const void **serv) {
 }
 
 Adapter::Service::~Service() {
-    rust_service_free(rust_service);
+    call_rust_maybe_throw([&] () {
+        return ::rust_service_free(rust_service);
+    });
 }
 
 extern "C" rust_shared_ptr_message rust_shim_message_clone(const libecap::Message *msg) {
@@ -604,28 +644,40 @@ extern "C" libecap::Header *rust_shim_message_header_mut(libecap::Message *msg) 
     return &msg->header();
 }
 
-extern "C" void rust_shim_host_xaction_use_adapted(libecap::host::Xaction *xaction, libecap::shared_ptr<libecap::Message> *adapted) {
-    xaction->useAdapted(*adapted);
+extern "C" bool rust_shim_host_xaction_use_adapted(libecap::host::Xaction *xaction, libecap::shared_ptr<libecap::Message> *adapted) {
+    return call_cpp_catch_exception([&] () {
+        xaction->useAdapted(*adapted);
+    });
 }
 
-extern "C" libecap::Message *rust_shim_host_xaction_virgin(libecap::host::Xaction *xaction) {
-    return &xaction->virgin();
+extern "C" bool rust_shim_host_xaction_virgin(libecap::host::Xaction *xaction, libecap::Message **out) {
+    return call_cpp_catch_exception([&] {
+        *out = &xaction->virgin();
+    });
 }
 
-extern "C" const libecap::Message *rust_shim_host_xaction_cause(libecap::host::Xaction *xaction) {
-    return &xaction->cause();
+extern "C" bool rust_shim_host_xaction_cause(libecap::host::Xaction *xaction, const libecap::Message **out) {
+    return call_cpp_catch_exception([&] {
+        *out = &xaction->cause();
+    });
 }
 
-extern "C" libecap::Message *rust_shim_host_xaction_adapted(libecap::host::Xaction *xaction) {
-    return &xaction->adapted();
+extern "C" bool rust_shim_host_xaction_adapted(libecap::host::Xaction *xaction, libecap::Message **out) {
+    return call_cpp_catch_exception([&] {
+        *out = &xaction->adapted();
+    });
 }
 
-extern "C" void rust_shim_host_xaction_note_ab_content_available(libecap::host::Xaction *xaction) {
-    xaction->noteAbContentAvailable();
+extern "C" bool rust_shim_host_xaction_note_ab_content_available(libecap::host::Xaction *xaction) {
+    return call_cpp_catch_exception([&] () {
+        xaction->noteAbContentAvailable();
+    });
 }
 
-extern "C" void rust_shim_host_xaction_note_ab_content_done(libecap::host::Xaction *xaction, bool end) {
-    xaction->noteAbContentDone(end);
+extern "C" bool rust_shim_host_xaction_note_ab_content_done(libecap::host::Xaction *xaction, bool end) {
+    return call_cpp_catch_exception([&] () {
+        xaction->noteAbContentDone(end);
+    });
 }
 
 
