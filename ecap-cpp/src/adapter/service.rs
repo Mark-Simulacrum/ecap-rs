@@ -35,9 +35,7 @@ pub unsafe fn to_service_mut<'a>(
 pub unsafe extern "C" fn rust_service_start(service: ServicePtr) -> bool {
     ffi_unwind(
         &mut (),
-        panic::AssertUnwindSafe(|| {
-            to_service(&service).start();
-        }),
+        panic::AssertUnwindSafe(|| to_service(&service).start()),
     )
 }
 
@@ -46,9 +44,7 @@ pub unsafe extern "C" fn rust_service_start(service: ServicePtr) -> bool {
 pub unsafe extern "C" fn rust_service_stop(service: ServicePtr) -> bool {
     ffi_unwind(
         &mut (),
-        panic::AssertUnwindSafe(|| {
-            to_service(&service).stop();
-        }),
+        panic::AssertUnwindSafe(|| to_service(&service).stop()),
     )
 }
 
@@ -57,20 +53,16 @@ pub unsafe extern "C" fn rust_service_stop(service: ServicePtr) -> bool {
 pub unsafe extern "C" fn rust_service_retire(service: ServicePtr) -> bool {
     ffi_unwind(
         &mut (),
-        panic::AssertUnwindSafe(|| {
-            to_service(&service).retire();
-        }),
+        panic::AssertUnwindSafe(|| to_service(&service).retire()),
     )
 }
 
 #[no_mangle]
 #[unwind(aborts)]
-pub unsafe extern "C" fn rust_service_is_async(service: ServicePtr) -> bool {
+pub unsafe extern "C" fn rust_service_is_async(service: ServicePtr, out: *mut bool) -> bool {
     ffi_unwind(
-        &mut (),
-        panic::AssertUnwindSafe(|| {
-            to_service(&service).is_async();
-        }),
+        out,
+        panic::AssertUnwindSafe(|| to_service(&service).is_async()),
     )
 }
 
@@ -79,9 +71,7 @@ pub unsafe extern "C" fn rust_service_is_async(service: ServicePtr) -> bool {
 pub unsafe extern "C" fn rust_service_resume(service: ServicePtr) -> bool {
     ffi_unwind(
         &mut (),
-        panic::AssertUnwindSafe(|| {
-            to_service(&service).resume();
-        }),
+        panic::AssertUnwindSafe(|| to_service(&service).resume()),
     )
 }
 

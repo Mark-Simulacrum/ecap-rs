@@ -145,14 +145,14 @@ impl ConcreteTransaction<CppHost> for CppTransaction {
         }
     }
     fn use_virgin(&mut self) {
-        call_ffi_maybe_panic(|()| unsafe {
+        call_ffi_maybe_panic(|_: *mut ()| unsafe {
             ffi::rust_shim_host_xaction_use_virgin(self.as_ptr_mut())
         });
     }
     fn use_adapted<M: 'static + ConcreteMessage<CppHost>>(&mut self, msg: M) {
         let v: &::std::any::Any = &msg;
         if let Some(shared_ptr_ref) = v.downcast_ref::<SharedPtrMessage>() {
-            call_ffi_maybe_panic(|()| unsafe {
+            call_ffi_maybe_panic(|_: *mut ()| unsafe {
                 ffi::rust_shim_host_xaction_use_adapted(
                     self.as_ptr_mut(),
                     <SharedPtrMessage>::as_ptr(shared_ptr_ref),
@@ -163,12 +163,12 @@ impl ConcreteTransaction<CppHost> for CppTransaction {
         }
     }
     fn block_virgin(&mut self) {
-        call_ffi_maybe_panic(|()| unsafe {
+        call_ffi_maybe_panic(|_: *mut ()| unsafe {
             ffi::rust_shim_host_xaction_block_virgin(self.as_ptr_mut())
         });
     }
     fn adaptation_delayed(&mut self, delay: &Delay) {
-        call_ffi_maybe_panic(|()| {
+        call_ffi_maybe_panic(|_: *mut ()| {
             let description = delay.description.as_ref().map(|s| s.as_ref()).unwrap_or("");
             unsafe {
                 ffi::rust_shim_host_xaction_adaptation_delayed(
@@ -182,47 +182,49 @@ impl ConcreteTransaction<CppHost> for CppTransaction {
     }
 
     fn adaptation_aborted(&mut self) {
-        call_ffi_maybe_panic(|()| unsafe {
+        call_ffi_maybe_panic(|_: *mut ()| unsafe {
             ffi::rust_shim_host_xaction_adaptation_aborted(self.as_ptr_mut())
         });
     }
 
     fn resume(&mut self) {
-        call_ffi_maybe_panic(|()| unsafe { ffi::rust_shim_host_xaction_resume(self.as_ptr_mut()) });
+        call_ffi_maybe_panic(|_: *mut ()| unsafe {
+            ffi::rust_shim_host_xaction_resume(self.as_ptr_mut())
+        });
     }
 
     fn virgin_body_discard(&mut self) {
-        call_ffi_maybe_panic(|()| unsafe {
+        call_ffi_maybe_panic(|_: *mut ()| unsafe {
             ffi::rust_shim_host_xaction_vb_discard(self.as_ptr_mut())
         });
     }
 
     fn virgin_body_make(&mut self) {
-        call_ffi_maybe_panic(|()| unsafe {
+        call_ffi_maybe_panic(|_: *mut ()| unsafe {
             ffi::rust_shim_host_xaction_vb_make(self.as_ptr_mut())
         });
     }
 
     fn virgin_body_make_more(&mut self) {
-        call_ffi_maybe_panic(|()| unsafe {
+        call_ffi_maybe_panic(|_: *mut ()| unsafe {
             ffi::rust_shim_host_xaction_vb_make_more(self.as_ptr_mut())
         })
     }
 
     fn virgin_body_stop_making(&mut self) {
-        call_ffi_maybe_panic(|()| unsafe {
+        call_ffi_maybe_panic(|_: *mut ()| unsafe {
             ffi::rust_shim_host_xaction_vb_stop_making(self.as_ptr_mut())
         })
     }
 
     fn virgin_body_pause(&mut self) {
-        call_ffi_maybe_panic(|()| unsafe {
+        call_ffi_maybe_panic(|_: *mut ()| unsafe {
             ffi::rust_shim_host_xaction_vb_pause(self.as_ptr_mut())
         })
     }
 
     fn virgin_body_resume(&mut self) {
-        call_ffi_maybe_panic(|()| unsafe {
+        call_ffi_maybe_panic(|_: *mut ()| unsafe {
             ffi::rust_shim_host_xaction_vb_resume(self.as_ptr_mut())
         })
     }
@@ -235,19 +237,19 @@ impl ConcreteTransaction<CppHost> for CppTransaction {
     }
 
     fn virgin_body_content_shift(&mut self, size: usize) {
-        call_ffi_maybe_panic(|()| unsafe {
+        call_ffi_maybe_panic(|_: *mut ()| unsafe {
             ffi::rust_shim_host_xaction_vb_content_shift(self.as_ptr_mut(), size)
         })
     }
 
     fn adapted_body_content_done(&mut self, at_end: bool) {
-        call_ffi_maybe_panic(|()| unsafe {
+        call_ffi_maybe_panic(|_: *mut ()| unsafe {
             ffi::rust_shim_host_xaction_note_ab_content_done(self.as_ptr_mut(), at_end)
         })
     }
 
     fn adapted_body_content_available(&mut self) {
-        call_ffi_maybe_panic(|()| unsafe {
+        call_ffi_maybe_panic(|_: *mut ()| unsafe {
             ffi::rust_shim_host_xaction_note_ab_content_available(self.as_ptr_mut())
         })
     }

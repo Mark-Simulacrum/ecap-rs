@@ -76,7 +76,9 @@ impl Translator for CppTranslator {
         }
         let thin_ptr = Box::into_raw(Box::new(service));
         unsafe {
-            ffi::rust_shim_register_service(thin_ptr as *mut *mut c_void);
+            assert!(call_ffi_maybe_panic(|raw| unsafe {
+                ffi::rust_shim_register_service(thin_ptr as *mut *mut c_void, raw)
+            }));
         }
     }
 }
@@ -178,14 +180,10 @@ where
 {
     match panic::catch_unwind(f) {
         Ok(res) => {
-            println!("encountered sucess in ffi_unwind");
             ptr::write(out, res);
             true
         }
-        Err(x) => {
-            println!("encountered panic in ffi_unwind::catch_unwind");
-            false
-        }
+        Err(_) => false,
     }
 }
 
@@ -193,7 +191,7 @@ use std::mem::{self, ManuallyDrop};
 
 pub fn call_ffi_maybe_panic<F, R>(f: F) -> R
 where
-    F: FnOnce(&mut R) -> bool,
+    F: FnOnce(*mut R) -> bool,
 {
     unsafe {
         let mut raw: ManuallyDrop<R> = ManuallyDrop::new(mem::uninitialized());

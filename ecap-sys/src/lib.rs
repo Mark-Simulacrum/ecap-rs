@@ -146,41 +146,47 @@ pub unsafe extern "C" fn rust_free_string(s: CVec) {
 
 pub type VisitorCallback = extern "C" fn(Name, Area, *mut c_void);
 
+#[unwind(aborts)]
 extern "C" {
-    pub fn rust_shim_first_line_version(line: *const FirstLine) -> Version;
-    pub fn rust_shim_first_line_set_version(line: *mut FirstLine, version: *const Version);
-    pub fn rust_shim_first_line_protocol(line: *const FirstLine) -> Name;
-    pub fn rust_shim_first_line_set_protocol(line: *mut FirstLine, protocol: *const Name);
+    pub fn rust_shim_first_line_version(line: *const FirstLine, out: *mut Version) -> bool;
+    pub fn rust_shim_first_line_set_version(line: *mut FirstLine, version: *const Version) -> bool;
+    pub fn rust_shim_first_line_protocol(line: *const FirstLine, out: *mut Name) -> bool;
+    pub fn rust_shim_first_line_set_protocol(line: *mut FirstLine, protocol: *const Name) -> bool;
 
-    pub fn rust_shim_message_first_line(msg: *const Message) -> *const FirstLine;
-    pub fn rust_shim_message_first_line_mut(msg: *mut Message) -> *mut FirstLine;
-
-    pub fn rust_shim_message_header(msg: *const Message) -> *const Header;
-    pub fn rust_shim_message_header_mut(msg: *mut Message) -> *mut Header;
-    pub fn rust_shim_message_add_body(msg: *mut Message);
-    pub fn rust_shim_message_add_trailer(msg: *mut Message);
-    pub fn rust_shim_message_trailer(msg: *const Message) -> *const Header;
-    pub fn rust_shim_message_trailer_mut(msg: *mut Message) -> *mut Header;
-    pub fn rust_shim_message_body(msg: *const Message) -> *const Body;
-    pub fn rust_shim_message_body_mut(msg: *mut Message) -> *mut Body;
-    pub fn rust_shim_message_clone(msg: *const Message) -> SharedPtrMessage;
+    pub fn rust_shim_message_first_line(msg: *const Message, out: *mut *const FirstLine) -> bool;
+    pub fn rust_shim_message_first_line_mut(msg: *mut Message, out: *mut *mut FirstLine) -> bool;
+    pub fn rust_shim_message_header(msg: *const Message, out: *mut *const Header) -> bool;
+    pub fn rust_shim_message_header_mut(msg: *mut Message, out: *mut *mut Header) -> bool;
+    pub fn rust_shim_message_add_body(msg: *mut Message) -> bool;
+    pub fn rust_shim_message_add_trailer(msg: *mut Message) -> bool;
+    pub fn rust_shim_message_trailer(msg: *const Message, out: *mut *const Header) -> bool;
+    pub fn rust_shim_message_trailer_mut(msg: *mut Message, out: *mut *mut Header) -> bool;
+    pub fn rust_shim_message_body(msg: *const Message, out: *mut *const Body) -> bool;
+    pub fn rust_shim_message_body_mut(msg: *mut Message, out: *mut *mut Body) -> bool;
+    pub fn rust_shim_message_clone(msg: *const Message, out: *mut SharedPtrMessage) -> bool;
 
     pub fn rust_shim_shared_ptr_message_ref(msg: *const SharedPtrMessage) -> *const Message;
     pub fn rust_shim_shared_ptr_message_ref_mut(msg: *mut SharedPtrMessage) -> *mut Message;
     pub fn rust_shim_shared_ptr_message_free(msg: *mut SharedPtrMessage);
-    pub fn rust_shim_body_size(line: *const Body) -> BodySize;
+    pub fn rust_shim_body_size(line: *const Body, out: *mut BodySize) -> bool;
 
-    pub fn rust_shim_header_has_any(header: *const Header, name: *const Name) -> bool;
-    pub fn rust_shim_header_value(header: *const Header, name: *const Name) -> Area;
-    pub fn rust_shim_header_add(header: *mut Header, name: *const Name, value: *const Area);
-    pub fn rust_shim_header_remove_any(header: *mut Header, name: *const Name);
-    pub fn rust_shim_header_image(header: *const Header) -> Area;
-    pub fn rust_shim_header_parse(header: *mut Header, buf: *const Area);
+    pub fn rust_shim_header_has_any(
+        header: *const Header,
+        name: *const Name,
+        out: *mut bool,
+    ) -> bool;
+    pub fn rust_shim_header_value(header: *const Header, name: *const Name, out: *mut Area)
+        -> bool;
+    pub fn rust_shim_header_add(header: *mut Header, name: *const Name, value: *const Area)
+        -> bool;
+    pub fn rust_shim_header_remove_any(header: *mut Header, name: *const Name) -> bool;
+    pub fn rust_shim_header_image(header: *const Header, out: *mut Area) -> bool;
+    pub fn rust_shim_header_parse(header: *mut Header, buf: *const Area) -> bool;
     pub fn rust_shim_header_visit_each(
         header: *const Header,
         cb: VisitorCallback,
         extra: *const c_void,
-    );
+    ) -> bool;
 
     pub fn rust_shim_host_xaction_virgin(
         xaction: *mut HostTransaction,
@@ -230,21 +236,24 @@ extern "C" {
         size: size_t,
     ) -> bool;
 
-    pub fn rust_area_new() -> Area;
-    pub fn rust_area_new_slice(buf: *const c_char, len: size_t) -> Area;
+    pub fn rust_area_new_slice(buf: *const c_char, len: size_t, out: *mut Area) -> bool;
     pub fn rust_area_free(area: *mut Area);
 
-    pub fn options_option(options: *const Options, name: *const Name) -> Area;
-    pub fn options_visit(options: *const Options, cb: VisitorCallback, extra: *mut c_void);
+    pub fn options_option(options: *const Options, name: *const Name, out: *mut Area) -> bool;
+    pub fn options_visit(options: *const Options, cb: VisitorCallback, extra: *mut c_void) -> bool;
 
-    pub fn rust_host() -> *const Host;
-    pub fn rust_shim_host_uri(host: *const Host) -> CVec;
-    pub fn rust_shim_host_describe(host: *const Host) -> CVec;
-    pub fn rust_shim_host_open_debug(host: *const Host, verbosity: LogVerbosity) -> *mut Ostream;
-    pub fn rust_shim_host_close_debug(host: *const Host, stream: *mut Ostream);
-    pub fn rust_shim_host_new_request(host: *const Host) -> SharedPtrMessage;
-    pub fn rust_shim_host_new_response(host: *const Host) -> SharedPtrMessage;
-    pub fn rust_shim_ostream_write(stream: *mut Ostream, buf: *const c_char, len: size_t);
+    pub fn rust_host(out: *mut *const Host) -> bool;
+    pub fn rust_shim_host_uri(host: *const Host, out: *mut CVec) -> bool;
+    pub fn rust_shim_host_describe(host: *const Host, out: *mut CVec) -> bool;
+    pub fn rust_shim_host_open_debug(
+        host: *const Host,
+        verbosity: LogVerbosity,
+        out: *mut *mut Ostream,
+    ) -> bool;
+    pub fn rust_shim_host_close_debug(host: *const Host, stream: *mut Ostream) -> bool;
+    pub fn rust_shim_host_new_request(host: *const Host, out: *mut SharedPtrMessage) -> bool;
+    pub fn rust_shim_host_new_response(host: *const Host, out: *mut SharedPtrMessage) -> bool;
+    pub fn rust_shim_ostream_write(stream: *mut Ostream, buf: *const c_char, len: size_t) -> bool;
 
-    pub fn rust_shim_register_service(service: *mut *mut c_void) -> bool;
+    pub fn rust_shim_register_service(service: *mut *mut c_void, out: *mut bool) -> bool;
 }

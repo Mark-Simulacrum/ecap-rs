@@ -2,6 +2,9 @@ use ecap::common::log::LogVerbosity;
 use ecap::host::Host;
 use ffi;
 
+use call_ffi_maybe_panic;
+use std::panic;
+
 use common::body::CppBody;
 use common::log::DebugStream;
 use common::message::{CppFirstLine, CppHeader, CppMessage, SharedPtrMessage};
@@ -15,7 +18,7 @@ impl CppHost {
     // XXX: Is this really &'static? Can the adapter rely on that?
     pub fn new() -> &'static CppHost {
         unsafe {
-            let host = ffi::rust_host();
+            let host = call_ffi_maybe_panic(|out| unsafe { ffi::rust_host(out) });
             assert!(!host.is_null());
             CppHost::from_ptr(host)
         }
@@ -35,7 +38,8 @@ impl Host for CppHost {
 
     fn uri(&self) -> String {
         unsafe {
-            let v = ffi::rust_shim_host_uri(self.as_ptr());
+            let v =
+                call_ffi_maybe_panic(|out| unsafe { ffi::rust_shim_host_uri(self.as_ptr(), out) });
             // FIXME: Should we be returning Vec<u8> here?
             String::from_utf8(v.to_rust()).unwrap()
         }
@@ -43,7 +47,9 @@ impl Host for CppHost {
 
     fn describe(&self) -> String {
         unsafe {
-            let v = ffi::rust_shim_host_describe(self.as_ptr());
+            let v = call_ffi_maybe_panic(|out| unsafe {
+                ffi::rust_shim_host_describe(self.as_ptr(), out)
+            });
             // FIXME: Should we be returning Vec<u8> here?
             String::from_utf8(v.to_rust()).unwrap()
         }
@@ -54,14 +60,18 @@ impl Host for CppHost {
     }
 
     // Dropping the stream closes it.
-    //
-    // XXX: Should we remove this method?
     fn close_debug(&self, _stream: Self::DebugStream) {}
 
     fn new_request(&self) -> SharedPtrMessage {
-        unsafe { SharedPtrMessage(ffi::rust_shim_host_new_request(self.as_ptr())) }
+        let raw = call_ffi_maybe_panic(|out| unsafe {
+            ffi::rust_shim_host_new_request(self.as_ptr(), out)
+        });
+        SharedPtrMessage(raw)
     }
     fn new_response(&self) -> SharedPtrMessage {
-        unsafe { SharedPtrMessage(ffi::rust_shim_host_new_response(self.as_ptr())) }
+        let raw = call_ffi_maybe_panic(|out| unsafe {
+            ffi::rust_shim_host_new_response(self.as_ptr(), out)
+        });
+        SharedPtrMessage(raw)
     }
 }

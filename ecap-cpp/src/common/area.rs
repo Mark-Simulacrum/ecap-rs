@@ -6,6 +6,8 @@ use std::ptr::{self, NonNull};
 use std::rc::Rc;
 use std::slice;
 
+use call_ffi_maybe_panic;
+
 pub struct CppArea(ffi::Area);
 
 impl CppArea {
@@ -15,10 +17,10 @@ impl CppArea {
 
     pub fn from_bytes(v: &[u8]) -> CppArea {
         unsafe {
-            CppArea::from_raw(ffi::rust_area_new_slice(
-                v.as_ptr() as *const c_char,
-                v.len(),
-            ))
+            let raw = call_ffi_maybe_panic(|out| unsafe {
+                ffi::rust_area_new_slice(v.as_ptr() as *const c_char, v.len(), out)
+            });
+            CppArea::from_raw(raw)
         }
     }
 

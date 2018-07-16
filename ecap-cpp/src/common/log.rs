@@ -5,6 +5,8 @@ use libc::c_char;
 use std::fmt;
 use std::ptr::NonNull;
 
+use call_ffi_maybe_panic;
+
 impl log::DebugStream for DebugStream {}
 
 pub struct DebugStream {
@@ -16,17 +18,16 @@ impl DebugStream {
     // XXX: This should technically take &'a CppHost and bind that lifetime to itself,
     // but we need GATs for that.
     pub fn from_host(host: &CppHost, verbosity: LogVerbosity) -> Option<Self> {
-        unsafe {
-            let stream =
-                ffi::rust_shim_host_open_debug(host.as_ptr(), ffi::LogVerbosity(verbosity.mask()));
-            if stream.is_null() {
-                None
-            } else {
-                Some(DebugStream {
-                    stream: stream,
-                    host: host.as_ptr(),
-                })
-            }
+        let stream = call_ffi_maybe_panic(|out| unsafe {
+            ffi::rust_shim_host_open_debug(host.as_ptr(), ffi::LogVerbosity(verbosity.mask()), out)
+        });
+        if stream.is_null() {
+            None
+        } else {
+            Some(DebugStream {
+                stream: stream,
+                host: host.as_ptr(),
+            })
         }
     }
 
@@ -46,9 +47,7 @@ impl fmt::Write for DebugStream {
 
 impl Drop for DebugStream {
     fn drop(&mut self) {
-        unsafe {
-            ffi::rust_shim_host_close_debug(self.host, self.stream);
-        }
+        call_ffi_maybe_panic(|_| unsafe { ffi::rust_shim_host_close_debug(self.host, self.stream) })
     }
 }
 

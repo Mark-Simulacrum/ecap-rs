@@ -120,7 +120,7 @@ libecap::Name from_rust_name(const rust_name *name) {
     return *reinterpret_cast<libecap::Name*>(&cpp);
 }
 
-extern "C" void rust_area_free(rust_area *area) {
+extern "C" void rust_area_free(rust_area *area) noexcept {
     libecap::Area::Details& details =
         reinterpret_cast<libecap::Area::Details&>(area->details);
     details.reset();
@@ -165,60 +165,60 @@ rust_shared_ptr_message to_rust_shared_ptr_message(libecap::shared_ptr<libecap::
 }
 
 extern "C" const libecap::Message *rust_shim_shared_ptr_message_ref(
-        const libecap::shared_ptr<libecap::Message> *msg) {
+        const libecap::shared_ptr<libecap::Message> *msg) noexcept {
     return msg->get();
 }
 
 extern "C" libecap::Message *rust_shim_shared_ptr_message_ref_mut(
-        libecap::shared_ptr<libecap::Message> *msg) {
+        libecap::shared_ptr<libecap::Message> *msg) noexcept {
     return msg->get();
 }
 
-extern "C" void rust_shim_shared_ptr_message_free(libecap::shared_ptr<libecap::Message> *msg) {
+extern "C" void rust_shim_shared_ptr_message_free(libecap::shared_ptr<libecap::Message> *msg) noexcept {
     msg->reset();
 }
 
 extern "C" {
-    rust_string rust_new_string(const char*, size_t);
-    void rust_free_string(rust_string);
-    bool rust_service_describe(const void **, const void *);
-    bool rust_service_uri(const void **, rust_string *);
-    bool rust_service_tag(const void **, rust_string *);
-    bool rust_service_start(const void **);
-    bool rust_service_stop(const void **);
-    bool rust_service_retire(const void **);
-    bool rust_service_is_async(const void **);
-    bool rust_service_resume(const void **);
-    bool rust_service_suspend(const void **, timeval *);
-    bool rust_service_configure(const void **, const libecap::Options *);
-    bool rust_service_reconfigure(const void **, const libecap::Options *);
-    bool rust_service_wants_url(const void **, const char *, bool *);
+    rust_string rust_new_string(const char*, size_t) noexcept;
+    void rust_free_string(rust_string) noexcept;
+    bool rust_service_describe(const void **, const void *) noexcept;
+    bool rust_service_uri(const void **, rust_string *) noexcept;
+    bool rust_service_tag(const void **, rust_string *) noexcept;
+    bool rust_service_start(const void **) noexcept;
+    bool rust_service_stop(const void **) noexcept;
+    bool rust_service_retire(const void **) noexcept;
+    bool rust_service_is_async(const void **, bool *) noexcept;
+    bool rust_service_resume(const void **) noexcept;
+    bool rust_service_suspend(const void **, timeval *) noexcept;
+    bool rust_service_configure(const void **, const libecap::Options *) noexcept;
+    bool rust_service_reconfigure(const void **, const libecap::Options *) noexcept;
+    bool rust_service_wants_url(const void **, const char *, bool *) noexcept;
 
-    bool rust_xaction_start(const void *, void *);
-    bool rust_xaction_stop(const void *, void *);
-    bool rust_xaction_resume(const void *, void *);
-    bool rust_xaction_ab_discard(const void *, void *);
-    bool rust_xaction_ab_make(const void *, void *);
-    bool rust_xaction_ab_make_more(const void *, void *);
-    bool rust_xaction_ab_stop_making(const void *, void *);
-    bool rust_xaction_ab_pause(const void *, void *);
-    bool rust_xaction_ab_resume(const void *, void *);
-    bool rust_xaction_ab_content(const void *, void *, size_t, size_t, rust_area *);
-    bool rust_xaction_ab_content_shift(const void *, void *, size_t);
+    bool rust_xaction_start(const void *, void *) noexcept;
+    bool rust_xaction_stop(const void *, void *) noexcept;
+    bool rust_xaction_resume(const void *, void *) noexcept;
+    bool rust_xaction_ab_discard(const void *, void *) noexcept;
+    bool rust_xaction_ab_make(const void *, void *) noexcept;
+    bool rust_xaction_ab_make_more(const void *, void *) noexcept;
+    bool rust_xaction_ab_stop_making(const void *, void *) noexcept;
+    bool rust_xaction_ab_pause(const void *, void *) noexcept;
+    bool rust_xaction_ab_resume(const void *, void *) noexcept;
+    bool rust_xaction_ab_content(const void *, void *, size_t, size_t, rust_area *) noexcept;
+    bool rust_xaction_ab_content_shift(const void *, void *, size_t) noexcept;
 
-    bool rust_xaction_vb_content_done(const void *, void *, bool);
-    bool rust_xaction_vb_content_available(const void *, void *);
+    bool rust_xaction_vb_content_done(const void *, void *, bool) noexcept;
+    bool rust_xaction_vb_content_available(const void *, void *) noexcept;
 
-    bool rust_service_free(const void **);
-    bool rust_xaction_create(const void **, void *, const void **);
-    bool rust_xaction_free(const void *);
+    bool rust_service_free(const void **) noexcept;
+    bool rust_xaction_create(const void **, void *, const void **) noexcept;
+    bool rust_xaction_free(const void *) noexcept;
 
-    bool rust_panic_pop(rust_panic *);
-    void rust_panic_free(rust_panic );
+    bool rust_panic_pop(rust_panic *) noexcept;
+    void rust_panic_free(rust_panic ) noexcept;
 }
 
 template<typename F>
-bool call_cpp_catch_exception(F f) {
+bool call_cpp_catch_exception(F f) noexcept {
     try {
         f();
         return true;
@@ -227,6 +227,8 @@ bool call_cpp_catch_exception(F f) {
         CURRENT_EXCEPTIONS.push_back(std::current_exception());
         return false;
     } catch (...) {
+        std::cerr << "caught an unknown exception in C++ shim" << std::endl;
+        CURRENT_EXCEPTIONS.push_back(std::current_exception());
         return false;
     }
 }
@@ -266,46 +268,60 @@ rust_string to_rust_string(const std::string &s) {
 }
 
 // TODO: This will copy the std::string returned by uri
-extern "C" rust_string rust_shim_host_uri(const libecap::host::Host *host) {
-    return to_rust_string(host->uri());
+extern "C" bool rust_shim_host_uri(const libecap::host::Host *host, rust_string *out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = to_rust_string(host->uri());
+    });
 }
 
-extern "C" rust_string rust_shim_host_describe(const libecap::host::Host *host) {
-    std::ostringstream out;
-    host->describe(out);
-    return to_rust_string(out.str());
+extern "C" bool rust_shim_host_describe(const libecap::host::Host *host, rust_string *out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        std::ostringstream desc;
+        host->describe(desc);
+        *out = to_rust_string(desc.str());
+    });
 }
 
-extern "C" void *rust_shim_host_open_debug(libecap::host::Host *host, RustLogVerbosity verbosity) {
-    return host->openDebug(libecap::LogVerbosity(verbosity.mask));
+extern "C" bool rust_shim_host_open_debug(libecap::host::Host *host, RustLogVerbosity verbosity, std::ostream** stream) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *stream = host->openDebug(libecap::LogVerbosity(verbosity.mask));
+    });
 }
 
-extern "C" void rust_shim_host_close_debug(libecap::host::Host *host, std::ostream* stream) {
-    host->closeDebug(stream);
+extern "C" bool rust_shim_host_close_debug(libecap::host::Host *host, std::ostream* stream) noexcept {
+    return call_cpp_catch_exception([&] () {
+        host->closeDebug(stream);
+    });
 }
 
-extern "C" void rust_shim_ostream_write(std::ostream *stream, char *buf, size_t length) {
-    stream->write(buf, length);
+extern "C" bool rust_shim_ostream_write(std::ostream *stream, char *buf, size_t length) noexcept {
+    return call_cpp_catch_exception([&] () {
+        stream->write(buf, length);
+    });
 }
 
-extern "C" rust_shared_ptr_message rust_shim_host_new_request(libecap::host::Host *host) {
-    return to_rust_shared_ptr_message(host->newRequest());
+extern "C" bool rust_shim_host_new_request(libecap::host::Host *host, rust_shared_ptr_message *out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = to_rust_shared_ptr_message(host->newRequest());
+    });
 }
 
-extern "C" rust_shared_ptr_message rust_shim_host_new_response(libecap::host::Host *host) {
-    return to_rust_shared_ptr_message(host->newResponse());
+extern "C" bool rust_shim_host_new_response(libecap::host::Host *host, rust_shared_ptr_message *out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = to_rust_shared_ptr_message(host->newResponse());
+    });
 }
 
-extern "C" libecap::host::Host &rust_host() {
-    return libecap::MyHost();
+extern "C" bool rust_host(libecap::host::Host **out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = &libecap::MyHost();
+    });
 }
 
-extern "C" rust_area rust_area_new() {
-    return to_rust_area(libecap::Area());
-}
-
-extern "C" rust_area rust_area_new_slice(char *buf, size_t len) {
-    return to_rust_area(libecap::Area::FromTempBuffer(buf, len));
+extern "C" bool rust_area_new_slice(char *buf, size_t len, rust_area *out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = to_rust_area(libecap::Area::FromTempBuffer(buf, len));
+    });
 }
 
 namespace Adapter { // not required, but adds clarity
@@ -406,12 +422,14 @@ void Adapter::Service::describe(std::ostream &os) const {
     });
 }
 
-extern "C" rust_area options_option(const libecap::Options *options, const rust_name* rname) {
-    Must(options);
-    // XXX: unavoidable copy due to Name's API
-    libecap::Name name = from_rust_name(rname);
-    libecap::Area area = options->option(name);
-    return to_rust_area(area);
+extern "C" bool options_option(const libecap::Options *options, const rust_name* rname, rust_area *out) {
+    return call_cpp_catch_exception([&] () {
+        Must(options);
+        // XXX: unavoidable copy due to Name's API
+        libecap::Name name = from_rust_name(rname);
+        libecap::Area area = options->option(name);
+        *out = to_rust_area(area);
+    });
 }
 
 typedef void (*visitor_callback)(const rust_name, const rust_area, void*);
@@ -427,23 +445,33 @@ class NamedValueVisitorImpl: public libecap::NamedValueVisitor {
         void* extra;
 };
 
-extern "C" void options_visit(
+extern "C" bool options_visit(
         const libecap::Options *options, visitor_callback callback, void* extra) {
-    Must(options);
-    auto visitor = NamedValueVisitorImpl(callback, extra);
-    options->visitEachOption(visitor);
+    return call_cpp_catch_exception([&] () {
+        Must(options);
+        auto visitor = NamedValueVisitorImpl(callback, extra);
+        options->visitEachOption(visitor);
+    });
 }
 
 bool Adapter::Service::makesAsyncXactions() const {
-	return rust_service_is_async(rust_service);
+    bool out;
+	call_rust_maybe_throw([&] () {
+        return rust_service_is_async(rust_service, &out);
+    });
+    return out;
 }
 
 void Adapter::Service::configure(const libecap::Options &options) {
-    rust_service_configure(rust_service, &options);
+	call_rust_maybe_throw([&] () {
+        return rust_service_configure(rust_service, &options);
+    });
 }
 
 void Adapter::Service::reconfigure(const libecap::Options &options) {
-    rust_service_reconfigure(rust_service, &options);
+	call_rust_maybe_throw([&] () {
+        return rust_service_reconfigure(rust_service, &options);
+    });
 }
 
 void Adapter::Service::start() {
@@ -501,7 +529,9 @@ Adapter::Xaction::Xaction(Adapter::Service *service, libecap::host::Xaction *x) 
 }
 
 Adapter::Xaction::~Xaction() {
-	rust_xaction_free(rust_xaction);
+	call_rust_maybe_throw([&] () {
+        return rust_xaction_free(rust_xaction);
+    });
 	rust_xaction = nullptr;
 }
 
@@ -528,7 +558,9 @@ void Adapter::Xaction::abContentShift(libecap::size_type size) {
 }
 
 void Adapter::Xaction::noteVbContentDone(bool atEnd) {
-    ::rust_xaction_vb_content_done(rust_xaction, hostx, atEnd);
+    call_rust_maybe_throw([&] () {
+        return ::rust_xaction_vb_content_done(rust_xaction, hostx, atEnd);
+    });
 }
 
 #define XACTION_METHOD_SHIM(rname__, cpp_name__) \
@@ -551,7 +583,7 @@ XACTION_METHOD_SHIM(rust_xaction_vb_content_available, noteVbContentAvailable);
 
 #define XACTION_METHOD_C_SHIM_INTERNAL(cpp_name__, c_name__) \
     extern "C" bool c_name__(libecap::host::Xaction *xaction) { \
-        return call_cpp_catch_exception([&] () { \
+        return call_cpp_catch_exception([&] () noexcept { \
             xaction->cpp_name__();\
         });\
     }
@@ -570,21 +602,21 @@ XACTION_METHOD_C_SHIM(vbMakeMore, vb_make_more);
 XACTION_METHOD_C_SHIM(vbStopMaking, vb_stop_making);
 
 extern "C" bool rust_shim_host_xaction_adaptation_delayed(libecap::host::Xaction *xaction,
-        const char* state, size_t len, double progress) {
+        const char* state, size_t len, double progress) noexcept {
     return call_cpp_catch_exception([&] () {
         xaction->adaptationDelayed(libecap::Delay(std::string(state, len), progress));
     });
 }
 
 extern "C" bool rust_shim_host_xaction_vb_content(
-    libecap::host::Xaction *xaction, size_t offset, size_t size, rust_area *out) {
+    libecap::host::Xaction *xaction, size_t offset, size_t size, rust_area *out) noexcept {
     return call_cpp_catch_exception([&] () {
         libecap::Area area = xaction->vbContent(offset, size);
         *out = to_rust_area(area);
     });
 }
 
-extern "C" bool rust_shim_host_xaction_vb_content_shift(libecap::host::Xaction *xaction, size_t size) {
+extern "C" bool rust_shim_host_xaction_vb_content_shift(libecap::host::Xaction *xaction, size_t size) noexcept {
     return call_cpp_catch_exception([&] () {
         xaction->vbContentShift(size);
     });
@@ -600,81 +632,103 @@ Adapter::Service::~Service() {
     });
 }
 
-extern "C" rust_shared_ptr_message rust_shim_message_clone(const libecap::Message *msg) {
-    return to_rust_shared_ptr_message(msg->clone());
+extern "C" bool rust_shim_message_clone(const libecap::Message *msg, rust_shared_ptr_message *out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = to_rust_shared_ptr_message(msg->clone());
+    });
 }
 
-extern "C" const libecap::FirstLine *rust_shim_message_first_line(const libecap::Message *msg) {
-    return &msg->firstLine();
+extern "C" bool rust_shim_message_first_line(const libecap::Message *msg, const libecap::FirstLine **out) {
+    return call_cpp_catch_exception([&] () {
+        *out = &msg->firstLine();
+    });
 }
 
-extern "C" libecap::FirstLine *rust_shim_message_first_line_mut(libecap::Message *msg) {
-    return &msg->firstLine();
+extern "C" bool rust_shim_message_first_line_mut(libecap::Message *msg, libecap::FirstLine **out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = &msg->firstLine();
+    });
 }
 
-extern "C" void rust_shim_message_add_body(libecap::Message *msg) {
-    msg->addBody();
+extern "C" bool rust_shim_message_add_body(libecap::Message *msg) noexcept {
+    return call_cpp_catch_exception([&] () {
+        msg->addBody();
+    });
 }
 
-extern "C" const libecap::Body *rust_shim_message_body(const libecap::Message *msg) {
-    return msg->body();
+extern "C" bool rust_shim_message_body(const libecap::Message *msg, const libecap::Body **out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = msg->body();
+    });
 }
 
-extern "C" libecap::Body *rust_shim_message_body_mut(libecap::Message *msg) {
-    return msg->body();
+extern "C" bool rust_shim_message_body_mut(libecap::Message *msg, libecap::Body **out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = msg->body();
+    });
 }
 
-extern "C" void rust_shim_message_add_trailer(libecap::Message *msg) {
-    msg->addTrailer();
+extern "C" bool rust_shim_message_add_trailer(libecap::Message *msg) noexcept {
+    return call_cpp_catch_exception([&] () {
+        msg->addTrailer();
+    });
 }
 
-extern "C" const libecap::Header *rust_shim_message_trailer(const libecap::Message *msg) {
-    return msg->trailer();
+extern "C" bool rust_shim_message_trailer(const libecap::Message *msg, const libecap::Header **out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = msg->trailer();
+    });
 }
 
-extern "C" libecap::Header *rust_shim_message_trailer_mut(libecap::Message *msg) {
-    return msg->trailer();
+extern "C" bool rust_shim_message_trailer_mut(libecap::Message *msg, libecap::Header **out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = msg->trailer();
+    });
 }
 
-extern "C" const libecap::Header *rust_shim_message_header(const libecap::Message *msg) {
-    return &msg->header();
+extern "C" bool rust_shim_message_header(const libecap::Message *msg, const libecap::Header **out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = &msg->header();
+    });
 }
 
-extern "C" libecap::Header *rust_shim_message_header_mut(libecap::Message *msg) {
-    return &msg->header();
+extern "C" bool rust_shim_message_header_mut(libecap::Message *msg, libecap::Header **out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = &msg->header();
+    });
 }
 
-extern "C" bool rust_shim_host_xaction_use_adapted(libecap::host::Xaction *xaction, libecap::shared_ptr<libecap::Message> *adapted) {
+extern "C" bool rust_shim_host_xaction_use_adapted(libecap::host::Xaction *xaction, libecap::shared_ptr<libecap::Message> *adapted) noexcept {
     return call_cpp_catch_exception([&] () {
         xaction->useAdapted(*adapted);
     });
 }
 
-extern "C" bool rust_shim_host_xaction_virgin(libecap::host::Xaction *xaction, libecap::Message **out) {
+extern "C" bool rust_shim_host_xaction_virgin(libecap::host::Xaction *xaction, libecap::Message **out) noexcept {
     return call_cpp_catch_exception([&] {
         *out = &xaction->virgin();
     });
 }
 
-extern "C" bool rust_shim_host_xaction_cause(libecap::host::Xaction *xaction, const libecap::Message **out) {
+extern "C" bool rust_shim_host_xaction_cause(libecap::host::Xaction *xaction, const libecap::Message **out) noexcept {
     return call_cpp_catch_exception([&] {
         *out = &xaction->cause();
     });
 }
 
-extern "C" bool rust_shim_host_xaction_adapted(libecap::host::Xaction *xaction, libecap::Message **out) {
+extern "C" bool rust_shim_host_xaction_adapted(libecap::host::Xaction *xaction, libecap::Message **out) noexcept {
     return call_cpp_catch_exception([&] {
         *out = &xaction->adapted();
     });
 }
 
-extern "C" bool rust_shim_host_xaction_note_ab_content_available(libecap::host::Xaction *xaction) {
+extern "C" bool rust_shim_host_xaction_note_ab_content_available(libecap::host::Xaction *xaction) noexcept {
     return call_cpp_catch_exception([&] () {
         xaction->noteAbContentAvailable();
     });
 }
 
-extern "C" bool rust_shim_host_xaction_note_ab_content_done(libecap::host::Xaction *xaction, bool end) {
+extern "C" bool rust_shim_host_xaction_note_ab_content_done(libecap::host::Xaction *xaction, bool end) noexcept {
     return call_cpp_catch_exception([&] () {
         xaction->noteAbContentDone(end);
     });
@@ -686,75 +740,101 @@ struct body_size {
     uint64_t size;
 };
 
-extern "C" body_size rust_shim_body_size(libecap::Body *body) {
-    auto size = body->bodySize();
-    if (size.known()) {
-        return body_size {
-            known: true,
-            size: size.value(),
+extern "C" bool rust_shim_body_size(libecap::Body *body, body_size *out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        auto size = body->bodySize();
+        if (size.known()) {
+            *out = body_size {
+                known: true,
+                size: size.value(),
+            };
+        } else {
+            *out = body_size {
+                known: false,
+                size: 0,
+            };
+        }
+    });
+}
+
+extern "C" bool rust_shim_first_line_version(const libecap::FirstLine *first_line, rust_version *out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        const auto version = first_line->version();
+        *out = rust_version {
+            majr: version.majr,
+            minr: version.minr,
+            micr: version.micr,
         };
-    } else {
-        return body_size {
-            known: false,
-            size: 0,
-        };
-    }
+    });
 }
 
-extern "C" rust_version rust_shim_first_line_version(const libecap::FirstLine *first_line) {
-    const auto version = first_line->version();
-    return rust_version {
-        majr: version.majr,
-        minr: version.minr,
-        micr: version.micr,
-    };
+extern "C" bool rust_shim_first_line_set_version(libecap::FirstLine *first_line, const rust_version *version) noexcept {
+    return call_cpp_catch_exception([&] () {
+        first_line->version(libecap::Version(version->majr, version->minr, version->micr));
+    });
 }
 
-extern "C" void rust_shim_first_line_set_version(libecap::FirstLine *first_line, const rust_version *version) {
-    first_line->version(libecap::Version(version->majr, version->minr, version->micr));
+extern "C" bool rust_shim_first_line_protocol(const libecap::FirstLine *first_line, rust_name *out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = to_rust_name(first_line->protocol());
+    });
 }
 
-extern "C" rust_name rust_shim_first_line_protocol(const libecap::FirstLine *first_line) {
-    return to_rust_name(first_line->protocol());
+extern "C" bool rust_shim_first_line_set_protocol(libecap::FirstLine *first_line, const rust_name* protocol) noexcept {
+    return call_cpp_catch_exception([&] () {
+        first_line->protocol(from_rust_name(protocol));
+    });
 }
 
-extern "C" void rust_shim_first_line_set_protocol(libecap::FirstLine *first_line, const rust_name* protocol) {
-    first_line->protocol(from_rust_name(protocol));
+extern "C" bool rust_shim_header_has_any(const libecap::Header *header, const rust_name* name, bool *out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = header->hasAny(from_rust_name(name));
+    });
 }
 
-extern "C" bool rust_shim_header_has_any(const libecap::Header *header, const rust_name* name) {
-    return header->hasAny(from_rust_name(name));
+extern "C" bool rust_shim_header_value(const libecap::Header *header, const rust_name* name, rust_area *out) {
+    return call_cpp_catch_exception([&] () {
+        *out = to_rust_area(header->value(from_rust_name(name)));
+    });
 }
 
-extern "C" rust_area rust_shim_header_value(const libecap::Header *header, const rust_name* name) {
-    return to_rust_area(header->value(from_rust_name(name)));
+extern "C" bool rust_shim_header_add(libecap::Header *header, const rust_name* name, const rust_area* value) noexcept {
+    return call_cpp_catch_exception([&] () {
+        auto area = libecap::Area(value->buf, value->size);
+        const libecap::Name namev = from_rust_name(name);
+        header->add(namev, area);
+    });
 }
 
-extern "C" void rust_shim_header_add(libecap::Header *header, const rust_name* name, const rust_area* value) {
-    auto area = libecap::Area(value->buf, value->size);
-    const libecap::Name namev = from_rust_name(name);
-    header->add(namev, area);
+extern "C" bool rust_shim_header_remove_any(libecap::Header *header, const rust_name* name) noexcept {
+    return call_cpp_catch_exception([&] () {
+        header->removeAny(from_rust_name(name));
+    });
 }
 
-extern "C" void rust_shim_header_remove_any(libecap::Header *header, const rust_name* name) {
-    header->removeAny(from_rust_name(name));
+extern "C" bool rust_shim_header_image(libecap::Header *header, rust_area *out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = to_rust_area(header->image());
+    });
 }
 
-extern "C" rust_area rust_shim_header_image(libecap::Header *header) {
-    return to_rust_area(header->image());
+extern "C" bool rust_shim_header_parse(libecap::Header *header, const rust_area *buf) noexcept {
+    return call_cpp_catch_exception([&] () {
+        auto area = libecap::Area(buf->buf, buf->size);
+        header->parse(area);
+    });
 }
 
-extern "C" void rust_shim_header_parse(libecap::Header *header, const rust_area *buf) {
-    auto area = libecap::Area(buf->buf, buf->size);
-    header->parse(area);
+extern "C" bool rust_shim_header_visit_each(
+        const libecap::Header *header, visitor_callback callback, void* extra) noexcept {
+    return call_cpp_catch_exception([&] () {
+        auto visitor = NamedValueVisitorImpl(callback, extra);
+        header->visitEach(visitor);
+    });
 }
 
-extern "C" void rust_shim_header_visit_each(
-        const libecap::Header *header, visitor_callback callback, void* extra) {
-    auto visitor = NamedValueVisitorImpl(callback, extra);
-    header->visitEach(visitor);
-}
-
-extern "C" bool rust_shim_register_service(const void **service) {
-    return libecap::RegisterVersionedService(new Adapter::Service(service));
+extern "C" bool rust_shim_register_service(const void **service, bool *out) noexcept {
+    return call_cpp_catch_exception([&] () {
+        *out = libecap::RegisterVersionedService(new Adapter::Service(service));
+    });
 }

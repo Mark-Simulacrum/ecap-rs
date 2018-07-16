@@ -2,6 +2,7 @@ use ffi;
 use libc::{c_char, c_void};
 use std::ops;
 
+use call_ffi_maybe_panic;
 use common::body::CppBody;
 use common::{options, CppArea, CppName, CppVersion};
 use ecap::common::header::{FirstLine, Header};
@@ -21,15 +22,18 @@ impl Header for CppHeader {
     fn contains_field(&self, field: &Name) -> bool {
         unsafe {
             let field = CppName::from_name(field);
-            ffi::rust_shim_header_has_any(self.as_ptr(), field.as_ptr())
+            call_ffi_maybe_panic(|raw| {
+                ffi::rust_shim_header_has_any(self.as_ptr(), field.as_ptr(), raw)
+            })
         }
     }
 
     fn get(&self, field: &Name) -> Option<Area> {
         unsafe {
             let field = CppName::from_name(field);
-            let cpp_area =
-                CppArea::from_raw(ffi::rust_shim_header_value(self.as_ptr(), field.as_ptr()));
+            let cpp_area = CppArea::from_raw(call_ffi_maybe_panic(|raw| unsafe {
+                ffi::rust_shim_header_value(self.as_ptr(), field.as_ptr(), raw)
+            }));
             let area: Area = cpp_area.into();
             if area.as_bytes().is_empty() {
                 None
@@ -57,16 +61,22 @@ impl Header for CppHeader {
     fn visit_each<V: NamedValueVisitor>(&self, mut visitor: &mut V) {
         let visitor = &mut visitor;
         unsafe {
-            ffi::rust_shim_header_visit_each(
-                self.as_ptr(),
-                options::visitor_callback,
-                visitor as *mut _ as *mut c_void,
-            )
+            call_ffi_maybe_panic(|_| unsafe {
+                ffi::rust_shim_header_visit_each(
+                    self.as_ptr(),
+                    options::visitor_callback,
+                    visitor as *mut _ as *mut c_void,
+                )
+            })
         }
     }
 
     fn image(&self) -> Area {
-        unsafe { CppArea::from_raw(ffi::rust_shim_header_image(self.as_ptr())).into() }
+        unsafe {
+            CppArea::from_raw(call_ffi_maybe_panic(|raw| unsafe {
+                ffi::rust_shim_header_image(self.as_ptr(), raw)
+            })).into()
+        }
     }
 
     fn parse(&mut self, buf: &Area) -> Result<(), ()> {
@@ -83,16 +93,24 @@ foreign_ref!(pub struct CppFirstLine(ffi::FirstLine));
 
 impl FirstLine for CppFirstLine {
     fn version(&self) -> Version {
-        unsafe { CppVersion::from_raw(ffi::rust_shim_first_line_version(self.as_ptr())) }
+        unsafe {
+            CppVersion::from_raw(call_ffi_maybe_panic(|raw| unsafe {
+                ffi::rust_shim_first_line_version(self.as_ptr(), raw)
+            }))
+        }
     }
     fn set_version(&mut self, version: Version) {
         let v = CppVersion::to_raw(version);
-        unsafe { ffi::rust_shim_first_line_set_version(self.as_ptr_mut(), &v) }
+        unsafe {
+            call_ffi_maybe_panic(|_| ffi::rust_shim_first_line_set_version(self.as_ptr_mut(), &v))
+        }
     }
 
     fn protocol(&self) -> Name {
         unsafe {
-            let raw = ffi::rust_shim_first_line_protocol(self.as_ptr());
+            let raw = call_ffi_maybe_panic(|raw| unsafe {
+                ffi::rust_shim_first_line_protocol(self.as_ptr(), raw)
+            });
             // XXX: copy!
             CppName::from_raw(&raw).to_owned()
         }
@@ -109,28 +127,50 @@ impl ConcreteMessage<CppHost> for CppMessage {
     type MessageClone = SharedPtrMessage;
 
     fn clone(&self) -> Self::MessageClone {
-        unsafe { SharedPtrMessage(ffi::rust_shim_message_clone(self.as_ptr())) }
+        unsafe {
+            SharedPtrMessage(call_ffi_maybe_panic(|raw| unsafe {
+                ffi::rust_shim_message_clone(self.as_ptr(), raw)
+            }))
+        }
     }
     fn first_line_mut(&mut self) -> &mut CppFirstLine {
         unsafe {
-            CppFirstLine::from_ptr_mut(ffi::rust_shim_message_first_line_mut(self.as_ptr_mut()))
+            CppFirstLine::from_ptr_mut(call_ffi_maybe_panic(|raw| unsafe {
+                ffi::rust_shim_message_first_line_mut(self.as_ptr_mut(), raw)
+            }))
         }
     }
     fn first_line(&self) -> &CppFirstLine {
-        unsafe { CppFirstLine::from_ptr(ffi::rust_shim_message_first_line(self.as_ptr())) }
+        unsafe {
+            CppFirstLine::from_ptr(call_ffi_maybe_panic(|raw| unsafe {
+                ffi::rust_shim_message_first_line(self.as_ptr(), raw)
+            }))
+        }
     }
     fn header_mut(&mut self) -> &mut CppHeader {
-        unsafe { CppHeader::from_ptr_mut(ffi::rust_shim_message_header_mut(self.as_ptr_mut())) }
+        unsafe {
+            CppHeader::from_ptr_mut(call_ffi_maybe_panic(|raw| unsafe {
+                ffi::rust_shim_message_header_mut(self.as_ptr_mut(), raw)
+            }))
+        }
     }
     fn header(&self) -> &CppHeader {
-        unsafe { CppHeader::from_ptr(ffi::rust_shim_message_header(self.as_ptr())) }
+        unsafe {
+            CppHeader::from_ptr(call_ffi_maybe_panic(|raw| unsafe {
+                ffi::rust_shim_message_header(self.as_ptr(), raw)
+            }))
+        }
     }
     fn add_body(&mut self) {
-        unsafe { ffi::rust_shim_message_add_body(self.as_ptr_mut()) }
+        unsafe {
+            call_ffi_maybe_panic(|_| unsafe { ffi::rust_shim_message_add_body(self.as_ptr_mut()) })
+        }
     }
     fn body_mut(&mut self) -> Option<&mut CppBody> {
         unsafe {
-            let ptr = ffi::rust_shim_message_body_mut(self.as_ptr_mut());
+            let ptr = call_ffi_maybe_panic(|raw| unsafe {
+                ffi::rust_shim_message_body_mut(self.as_ptr_mut(), raw)
+            });
             if ptr.is_null() {
                 None
             } else {
@@ -140,7 +180,9 @@ impl ConcreteMessage<CppHost> for CppMessage {
     }
     fn body(&self) -> Option<&CppBody> {
         unsafe {
-            let ptr = ffi::rust_shim_message_body(self.as_ptr());
+            let ptr = call_ffi_maybe_panic(|raw| unsafe {
+                ffi::rust_shim_message_body(self.as_ptr(), raw)
+            });
             if ptr.is_null() {
                 None
             } else {
@@ -154,10 +196,18 @@ impl ConcreteMessage<CppHost> for CppMessage {
         }
     }
     fn trailer_mut(&mut self) -> &mut CppHeader {
-        unsafe { CppHeader::from_ptr_mut(ffi::rust_shim_message_trailer_mut(self.as_ptr_mut())) }
+        unsafe {
+            CppHeader::from_ptr_mut(call_ffi_maybe_panic(|raw| unsafe {
+                ffi::rust_shim_message_trailer_mut(self.as_ptr_mut(), raw)
+            }))
+        }
     }
     fn trailer(&self) -> &CppHeader {
-        unsafe { CppHeader::from_ptr(ffi::rust_shim_message_trailer(self.as_ptr())) }
+        unsafe {
+            CppHeader::from_ptr(call_ffi_maybe_panic(|raw| unsafe {
+                ffi::rust_shim_message_trailer(self.as_ptr(), raw)
+            }))
+        }
     }
 }
 
