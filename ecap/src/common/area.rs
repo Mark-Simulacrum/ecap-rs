@@ -94,13 +94,14 @@ struct RcPtr<T: ?Sized> {
     rc: NonNull<T>,
 }
 
-impl<T: ?Sized> Clone for RcPtr<T> {
+impl<T: ?Sized + AsRef<[u8]>> Clone for RcPtr<T> {
     fn clone(&self) -> RcPtr<T> {
+        self.increment();
         RcPtr { rc: self.rc }
     }
 }
 
-impl<T: ?Sized> Copy for RcPtr<T> {}
+impl<T: ?Sized + AsRef<[u8]>> Copy for RcPtr<T> {}
 
 impl<T: ?Sized + AsRef<[u8]>> Details for RcPtr<T> {
     fn increment(&self) {
